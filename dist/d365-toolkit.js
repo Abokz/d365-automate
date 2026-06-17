@@ -27,6 +27,8 @@
     releaseSalesOrder: async function() {
     },
     exportInvoices: async function() {
+    },
+    monitorBatchJobs: async function() {
     }
   };
 })();

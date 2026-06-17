@@ -5,5 +5,9 @@ D365Toolkit.workflows = {
 
     exportInvoices: async function() {
         // workflow
-    }
+    },
+
+    monitorBatchJobs: async function() {
+      // BatchJob  
+    },
 };

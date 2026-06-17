@@ -29,6 +29,8 @@
     exportInvoices: async function() {
     },
     monitorBatchJobs: async function() {
+    },
+    crossCheckInvoice: async function() {
     }
   };
 })();

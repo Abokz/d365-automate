@@ -10,4 +10,8 @@ D365Toolkit.workflows = {
     monitorBatchJobs: async function() {
       // BatchJob  
     },
+
+    crossCheckInvoice: async function() {
+        
+    },
 };

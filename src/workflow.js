@@ -1,3 +1,5 @@
+import './batchJobMonitoring/batchJobMonitoring.js'
+
 D365Toolkit.workflows = {
     releaseSalesOrder: async function() {
         // workflow
@@ -8,7 +10,7 @@ D365Toolkit.workflows = {
     },
 
     monitorBatchJobs: async function() {
-      // BatchJob  
+        BatchJobMonitor.run();
     },
 
     crossCheckInvoice: async function() {

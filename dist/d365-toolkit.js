@@ -1,6 +1,10 @@
 (() => {
   // src/core.js
   window.D365Toolkit = {
+    version: "1.0.0",
+    init() {
+      console.log("D365 Toolkit Initialized.");
+    },
     wait(ms) {
       return new Promise((r) => setTimeout(r, ms));
     },

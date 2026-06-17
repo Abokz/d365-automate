@@ -31,6 +31,8 @@
     monitorBatchJobs: async function() {
     },
     crossCheckInvoice: async function() {
+    },
+    createNewUser: async function() {
     }
   };
 })();

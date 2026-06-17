@@ -14,4 +14,8 @@ D365Toolkit.workflows = {
     crossCheckInvoice: async function() {
         
     },
+
+    createNewUser: async function() {
+        
+    },
 };

@@ -302,7 +302,7 @@ async function switchEntity(entityCode) {
   if (!row) throw new Error('switchEntity: could not find parent row');
 
   _log.ok(`Row id: ${row.id}`);
-  await simulateClickRow(row);
+  simulateClick(row);
 
   // 6. Wait for D365 to finish refreshing
   await waitReady();

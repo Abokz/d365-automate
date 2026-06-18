@@ -435,7 +435,7 @@
     const row = matchingCell.closest('[role="row"]');
     if (!row) throw new Error("switchEntity: could not find parent row");
     _log.ok(`Row id: ${row.id}`);
-    await simulateClickRow(row);
+    simulateClick(row);
     await waitReady();
     const newCode = document.querySelector("#CompanyButton_button")?.textContent.trim();
     if (newCode !== entityCode) {

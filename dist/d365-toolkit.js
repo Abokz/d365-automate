@@ -1027,10 +1027,10 @@
 .tk-btn:hover { filter: brightness(1.15); }
 .tk-btn:disabled { opacity: .45; cursor: not-allowed; filter: none; }
 
-.tk-btn-primary  { background: #89b4fa; color: #1e1e2e; }
-.tk-btn-success  { background: #a6e3a1; color: #1e1e2e; }
-.tk-btn-warning  { background: #f9e2af; color: #1e1e2e; }
-.tk-btn-danger   { background: #f38ba8; color: #1e1e2e; }
+.tk-btn-primary  { background: #89b4fa; color: #bcbcd6; }
+.tk-btn-success  { background: #a6e3a1; color: #bcbcd6; }
+.tk-btn-warning  { background: #f9e2af; color: #bcbcd6; }
+.tk-btn-danger   { background: #f38ba8; color: #bcbcd6; }
 .tk-btn-neutral  { background: #45475a; color: #cdd6f4; }
 .tk-btn-ghost    { background: transparent; color: #89b4fa; border: 1px solid #89b4fa; }
 

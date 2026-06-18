@@ -241,7 +241,7 @@ const BatchJobMonitor = (() => {
       report.push(entry);
       await goToRow(grid, idx); // Select again to deselect
       idx++;
-      await sleep(d365Config.stepDelayMs);
+      await sleep(5000);
     }
 
     _lastReport = report;

@@ -751,7 +751,7 @@
         report.push(entry);
         await goToRow(grid, idx);
         idx++;
-        await sleep(d365Config.stepDelayMs);
+        await sleep(5e3);
       }
       _lastReport = report;
       _printReport(report);

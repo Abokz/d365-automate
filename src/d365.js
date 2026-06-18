@@ -246,19 +246,19 @@ async function switchEntity(entityCode) {
     { timeout: 10_000, label: 'company picker search input' }
   );
 
-  console.log("---BEFORE----");
-  console.log("1. ", searchInput.isConnected);
-  console.log("2. ", searchInput.value);
-  console.log("3. ", document.activeElement === searchInput);
+  _log.ok("---BEFORE----");
+  _log.ok(`1. ${searchInput.isConnected}`);
+  _log.ok(`2. ${searchInput.value}`);
+  _log.ok(`3. ${document.activeElement === searchInput}`);
 
   // 3. Type the entity code
   await fill(searchInput, entityCode);
   await sleep(600); // let the list filter
 
-  console.log("---After----");
-  console.log("1. ", searchInput.isConnected);
-  console.log("2. ", searchInput.value);
-  console.log("3. ", document.activeElement === searchInput);
+  _log.ok("---After----");
+  _log.ok(`1. ${searchInput.isConnected}`);
+  _log.ok(`2. ${searchInput.value}`);
+  _log.ok(`3. ${document.activeElement === searchInput}`);
 
   // 4. Click the matching list item
   const listItem = await waitFor(

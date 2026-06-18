@@ -220,9 +220,11 @@ function pressEnter(el) {
  *
  * @param {string} entityCode  e.g. "4111" or "0051"
  */
+
 async function switchEntity(entityCode) {
   const currentBtn = document.querySelector('#CompanyButton_button');
   if (!currentBtn) throw new Error('switchEntity: company button not found');
+
   const currentCode = currentBtn.textContent.trim();
   if (currentCode === entityCode) {
     _log.info(`Already on entity ${entityCode} — skipping switch`);
@@ -233,38 +235,35 @@ async function switchEntity(entityCode) {
   // 1. Open the picker
   simulateClick(currentBtn);
 
-  // 2. Wait for the company input to appear
+  // 2. Wait for the input inside the company chooser panel to become visible.
+  //    The id is stable: SysCompanyChooser_2_DataArea_id_input
+  //    Fall back to scoping inside the known container id as a safety net.
   const searchInput = await waitFor(
     () => {
-      return (
-        query('input[aria-label="Current company"]',          { visibleOnly: true }) ||
-        query('input[name="DataArea_id"]',                    { visibleOnly: true }) ||
-        query('input[id*="DataArea_id"]',                    { visibleOnly: true }) ||
-        query('input[aria-label*="company" i]',               { visibleOnly: true }) ||
-        query('input[aria-label*="entity" i]',                { visibleOnly: true }) ||
-        query('input[placeholder*="Search" i]',               { visibleOnly: true }) ||
-        query('.navigationBar-searchInput input',             { visibleOnly: true }) ||
-        query('[data-dyn-controlname*="Company"] input',      { visibleOnly: true })
-      );
+      const el =
+        document.querySelector('#SysCompanyChooser_2_DataArea_id_input') ||
+        document.querySelector('#navigationbar_companychooser input[role="combobox"]') ||
+        document.querySelector('#SysCompanyChooser_2_DataArea_id input');
+      return el && isVisible(el) ? el : null;
     },
-    { timeout: 10_000, label: 'company picker search input' }
+    { timeout: 10_000, label: 'company chooser input' }
   );
 
-  _log.ok(`Found input: id=${searchInput.id}, value="${searchInput.value}"`);
+  _log.ok(`Found input: id=${searchInput.id}, title="${searchInput.title}"`);
 
   // 3. Fill the entity code
   await fill(searchInput, entityCode);
-  await sleep(400); // let D365 process the input binding
+  await sleep(400);
 
-  _log.ok(`After fill: value="${searchInput.value}", connected=${searchInput.isConnected}`);
+  _log.ok(`After fill: value="${searchInput.value}"`);
 
-  // 4. Confirm with Enter (Tab also works but may shift focus unexpectedly)
+  // 4. Press Enter to confirm — hits the keyDown binding D365 listens to
   pressEnter(searchInput);
 
   // 5. Wait for D365 to finish refreshing
   await waitReady();
 
-  // 6. Confirm the switch
+  // 6. Confirm
   const newCode = document.querySelector('#CompanyButton_button')?.textContent.trim();
   if (newCode !== entityCode) {
     _log.warn(`switchEntity: button shows "${newCode}" instead of "${entityCode}" — continuing anyway`);

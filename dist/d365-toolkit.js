@@ -413,14 +413,15 @@
     simulateClick(currentBtn);
     const searchInput = await waitFor(
       () => {
-        return query('input[aria-label="Current company"]', { visibleOnly: true }) || query('input[name="DataArea_id"]', { visibleOnly: true }) || query('input[id*="DataArea_id"]', { visibleOnly: true }) || query('input[aria-label*="company" i]', { visibleOnly: true }) || query('input[aria-label*="entity" i]', { visibleOnly: true }) || query('input[placeholder*="Search" i]', { visibleOnly: true }) || query(".navigationBar-searchInput input", { visibleOnly: true }) || query('[data-dyn-controlname*="Company"] input', { visibleOnly: true });
+        const el = document.querySelector("#SysCompanyChooser_2_DataArea_id_input") || document.querySelector('#navigationbar_companychooser input[role="combobox"]') || document.querySelector("#SysCompanyChooser_2_DataArea_id input");
+        return el && isVisible(el) ? el : null;
       },
-      { timeout: 1e4, label: "company picker search input" }
+      { timeout: 1e4, label: "company chooser input" }
     );
-    _log.ok(`Found input: id=${searchInput.id}, value="${searchInput.value}"`);
+    _log.ok(`Found input: id=${searchInput.id}, title="${searchInput.title}"`);
     await fill(searchInput, entityCode);
     await sleep(400);
-    _log.ok(`After fill: value="${searchInput.value}", connected=${searchInput.isConnected}`);
+    _log.ok(`After fill: value="${searchInput.value}"`);
     pressEnter(searchInput);
     await waitReady();
     const newCode = document.querySelector("#CompanyButton_button")?.textContent.trim();

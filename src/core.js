@@ -121,16 +121,24 @@ function findByLabel(label, { root = document, visibleOnly = true } = {}) {
 function simulateClick(el) {
   if (!el) throw new Error('simulateClick: element is null');
   const rect = el.getBoundingClientRect();
-  const opts = {
-    bubbles: true,
-    cancelable: true,
-    view: window,
-    clientX: rect.left + rect.width / 2,
-    clientY: rect.top + rect.height / 2,
-  };
-  el.dispatchEvent(new MouseEvent('mousedown', opts));
-  el.dispatchEvent(new MouseEvent('mouseup',   opts));
-  el.dispatchEvent(new MouseEvent('click',     opts));
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+
+  // Mimic real hit-testing instead of forcing the event onto `el` directly —
+  // if `el` has pointer-events:none or is just a display node inside a
+  // wrapper that owns the actual handler, a real click (and Playwright)
+  // would land on that wrapper, not on `el` itself.
+  const target = document.elementFromPoint(cx, cy) || el;
+
+  const opts = { bubbles: true, cancelable: true, view: window, clientX: cx, clientY: cy };
+
+  // Cover both event models — some grid components only listen for
+  // PointerEvent, others only for legacy MouseEvent.
+  target.dispatchEvent(new PointerEvent('pointerdown', { ...opts, pointerId: 1, isPrimary: true }));
+  target.dispatchEvent(new MouseEvent('mousedown', opts));
+  target.dispatchEvent(new PointerEvent('pointerup',   { ...opts, pointerId: 1, isPrimary: true }));
+  target.dispatchEvent(new MouseEvent('mouseup',   opts));
+  target.dispatchEvent(new MouseEvent('click',     opts));
 }
 
 async function simulateClickRow(el) {

@@ -333,7 +333,7 @@
   var _log, GM_BROWSER_HEADERS;
   var init_core = __esm({
     "src/core.js"() {
-      console.log("TOOLKIT BUILD 2026-06-18-1");
+      console.log("TOOLKIT BUILD 2026-06-18-2");
       _log = {
         info: (...a) => console.log("%c[D365]", "color:#4fc3f7;font-weight:bold", ...a),
         warn: (...a) => console.warn("%c[D365]", "color:#ffb74d;font-weight:bold", ...a),
@@ -362,7 +362,7 @@
   // src/d365.js
   init_core();
   var DEFAULT_CONFIG = {
-    stepDelayMs: 1e3,
+    stepDelayMs: 400,
     navigationTimeoutMs: 25e3,
     historyRowTimeoutMs: 6e3,
     goToRowMaxAttempts: 80

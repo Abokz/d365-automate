@@ -107,7 +107,7 @@ const CSS = `
   background: #1e1e2e;
   border: 1px solid #45475a;
   border-radius: 5px;
-  color: #ffffff;
+  color: #cdd6f4;
   font-size: 12px;
   margin-bottom: 6px;
 }
@@ -150,6 +150,7 @@ const CSS = `
   width: 100%;
   border-collapse: collapse;
   font-size: 11px;
+  color: #cdd6f4;
 }
 .tk-table th {
   background: #45475a;
@@ -163,6 +164,7 @@ const CSS = `
   padding: 3px 6px;
   border-bottom: 1px solid #313244;
   white-space: nowrap;
+  color: #cdd6f4;
 }
 .tk-table tr:hover td { background: #313244; }
 .tk-flag-ok       { color: #a6e3a1; font-weight: 700; }

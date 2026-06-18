@@ -248,7 +248,6 @@ function pressTab(el) {
 async function switchEntity(entityCode) {
   const currentBtn = document.querySelector('#CompanyButton_button');
   if (!currentBtn) throw new Error('switchEntity: company button not found');
-
   const currentCode = currentBtn.textContent.trim();
   if (currentCode === entityCode) {
     _log.info(`Already on entity ${entityCode} — skipping switch`);
@@ -267,36 +266,57 @@ async function switchEntity(entityCode) {
     },
     { timeout: 10_000, label: 'company chooser input' }
   );
-
   _log.ok(`Found input: id=${searchInput.id}`);
 
   // 3. Fill the entity code
   await fill(searchInput, entityCode);
   await sleep(300);
 
-  // 4. Click the lookup button to open the dropdown
+  // 4. Click the lookup button to open the dropdown grid
   const lookupBtn = document.querySelector('.lookupButton');
   if (!lookupBtn) throw new Error('switchEntity: lookup button not found');
   simulateClick(lookupBtn);
+  _log.ok('Clicked lookup button — waiting for Company grid...');
 
-  _log.ok('Clicked lookup button — waiting for Company textbox...');
-
-  // 5. Wait for the Company textbox and simulateClick it — exactly like Playwright
-  const matchingCell = await waitFor(
-    () => {
-      const cells = document.querySelectorAll('input[role="textbox"][aria-label="Company"]');
-      for (const cell of cells) {
-        if (cell.title === entityCode || cell.value === entityCode) {
-          return isVisible(cell) ? cell : null;
-        }
+  // The grid is a virtualized fixed-data-table list: DOM nodes get recycled
+  // as it loads/filters/scrolls, so an id captured once can be stale a
+  // moment later. Always re-query fresh right before clicking.
+  const findMatchingCell = () => {
+    const cells = document.querySelectorAll('input[role="textbox"][aria-label="Company"]');
+    for (const cell of cells) {
+      if (isVisible(cell) && (cell.title === entityCode || cell.value === entityCode)) {
+        return cell;
       }
-      return null;
-    },
-    { timeout: 8_000, label: `Company textbox for "${entityCode}"` }
-  );
+    }
+    return null;
+  };
 
-  _log.ok(`Found: id=${matchingCell.id}, value=${matchingCell.value}`);
-  simulateClick(matchingCell);
+  // Wait for a match to first appear at all
+  await waitFor(findMatchingCell, { timeout: 8_000, label: `Company textbox for "${entityCode}"` });
+
+  // Let virtualization finish settling (auto-scroll-to-match, re-render
+  // after filter) before we start treating any node as stable.
+  await sleep(250);
+
+  const gridStillOpen = () => document.querySelector('input[role="textbox"][aria-label="Company"]') !== null;
+
+  let attempt = 0;
+  const maxAttempts = 4;
+  while (gridStillOpen() && attempt < maxAttempts) {
+    attempt++;
+    const cell = findMatchingCell(); // fresh node every attempt, never reused
+    if (!cell) {
+      await sleep(150);
+      continue;
+    }
+    _log.ok(`Attempt ${attempt}: clicking id=${cell.id}, value=${cell.value}`);
+    simulateClick(cell);
+    await sleep(250);
+  }
+
+  if (gridStillOpen()) {
+    throw new Error(`switchEntity: Company grid still open after ${maxAttempts} click attempts for "${entityCode}"`);
+  }
 
   // 6. Wait for D365 to finish refreshing
   await waitReady();

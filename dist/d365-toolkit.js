@@ -425,21 +425,35 @@
     const lookupBtn = document.querySelector(".lookupButton");
     if (!lookupBtn) throw new Error("switchEntity: lookup button not found");
     simulateClick(lookupBtn);
-    _log.ok("Clicked lookup button \u2014 waiting for Company textbox...");
-    const matchingCell = await waitFor(
-      () => {
-        const cells = document.querySelectorAll('input[role="textbox"][aria-label="Company"]');
-        for (const cell of cells) {
-          if (cell.title === entityCode || cell.value === entityCode) {
-            return isVisible(cell) ? cell : null;
-          }
+    _log.ok("Clicked lookup button \u2014 waiting for Company grid...");
+    const findMatchingCell = () => {
+      const cells = document.querySelectorAll('input[role="textbox"][aria-label="Company"]');
+      for (const cell of cells) {
+        if (isVisible(cell) && (cell.title === entityCode || cell.value === entityCode)) {
+          return cell;
         }
-        return null;
-      },
-      { timeout: 8e3, label: `Company textbox for "${entityCode}"` }
-    );
-    _log.ok(`Found: id=${matchingCell.id}, value=${matchingCell.value}`);
-    simulateClick(matchingCell);
+      }
+      return null;
+    };
+    await waitFor(findMatchingCell, { timeout: 8e3, label: `Company textbox for "${entityCode}"` });
+    await sleep(250);
+    const gridStillOpen = () => document.querySelector('input[role="textbox"][aria-label="Company"]') !== null;
+    let attempt = 0;
+    const maxAttempts = 4;
+    while (gridStillOpen() && attempt < maxAttempts) {
+      attempt++;
+      const cell = findMatchingCell();
+      if (!cell) {
+        await sleep(150);
+        continue;
+      }
+      _log.ok(`Attempt ${attempt}: clicking id=${cell.id}, value=${cell.value}`);
+      simulateClick(cell);
+      await sleep(250);
+    }
+    if (gridStillOpen()) {
+      throw new Error(`switchEntity: Company grid still open after ${maxAttempts} click attempts for "${entityCode}"`);
+    }
     await waitReady();
     const newCode = document.querySelector("#CompanyButton_button")?.textContent.trim();
     if (newCode !== entityCode) {

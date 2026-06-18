@@ -398,8 +398,14 @@
       },
       { timeout: 1e4, label: "company picker search input" }
     );
+    console.log(searchInput.isConnected);
+    console.log(searchInput.value);
+    console.log(document.activeElement === searchInput);
     await fill(searchInput, entityCode);
     await sleep(600);
+    console.log(searchInput.isConnected);
+    console.log(searchInput.value);
+    console.log(document.activeElement === searchInput);
     const listItem = await waitFor(
       () => {
         const items = document.querySelectorAll(

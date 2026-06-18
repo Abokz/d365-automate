@@ -138,9 +138,6 @@
       buttons: 0
     };
     el.dispatchEvent(new MouseEvent("mousedown", downOpts));
-    if (typeof el.focus === "function") {
-      el.focus();
-    }
     el.dispatchEvent(new MouseEvent("mouseup", upOpts));
     el.dispatchEvent(new MouseEvent("click", upOpts));
   }

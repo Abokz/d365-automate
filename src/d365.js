@@ -206,10 +206,6 @@ function pressKey(el, key, code = key) {
   );
 }
 
-function pressEnter(el) {
-  pressKey(el, "Enter", "Enter");
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Entity / company switching
 // ─────────────────────────────────────────────────────────────────────────────
@@ -254,7 +250,7 @@ async function switchEntity(entityCode) {
   await fill(searchInput, entityCode);
   await sleep(600); // let the list filter
 
-  // 4. Press Enter
+  // 4. Click the matching list item
   const listItem = await waitFor(
     () => {
       // Look for an option/row whose text exactly matches the entity code

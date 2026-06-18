@@ -259,46 +259,53 @@ async function switchEntity(entityCode) {
   // 1. Open the picker
   simulateClick(currentBtn);
 
-  // 2. Wait for the input inside the company chooser panel to become visible.
-  //    The id is stable: SysCompanyChooser_2_DataArea_id_input
-  //    Fall back to scoping inside the known container id as a safety net.
+  // 2. Wait for the input to become visible
   const searchInput = await waitFor(
     () => {
-      const el =
-        document.querySelector('#SysCompanyChooser_2_DataArea_id_input') ||
-        document.querySelector('#navigationbar_companychooser input[role="combobox"]') ||
-        document.querySelector('#SysCompanyChooser_2_DataArea_id input');
+      const el = document.querySelector('#SysCompanyChooser_2_DataArea_id_input');
       return el && isVisible(el) ? el : null;
     },
     { timeout: 10_000, label: 'company chooser input' }
   );
 
-  _log.ok(`Found input: id=${searchInput.id}, title="${searchInput.title}"`);
+  _log.ok(`Found input: id=${searchInput.id}`);
 
   // 3. Fill the entity code
   await fill(searchInput, entityCode);
-  await sleep(400);
+  await sleep(300);
 
   _log.ok(`After fill: value="${searchInput.value}"`);
 
-  // 4. Press Enter to confirm — hits the keyDown binding D365 listens to
-  pressEnter(searchInput);
-  await sleep(300);
+  // 4. Click the lookup button (the dropdown trigger inside the same container)
+  const lookupBtn = document.querySelector('#SysCompanyChooser_2_DataArea_id .lookupButton');
+  if (!lookupBtn) throw new Error('switchEntity: lookup button not found');
+  simulateClick(lookupBtn);
 
-  
-  // If still not navigated, force blur to trigger focusOutCallBack
-  const stillSame = document.querySelector('#CompanyButton_button')?.textContent.trim() === currentCode;
-  if (stillSame) {
-    _log.warn('Enter did not trigger switch — trying Tab + blur');
-    pressTab(searchInput);
-    await sleep(200);
-    searchInput.blur();
-  }
+  _log.ok('Clicked lookup button — waiting for dropdown grid...');
 
-  // 5. Wait for D365 to finish refreshing
+  // 5. Wait for a grid row whose Company cell matches entityCode
+  const matchingRow = await waitFor(
+    () => {
+      const cells = document.querySelectorAll('[data-dyn-controlname="DataArea_id"] input[type="text"]');
+      for (const cell of cells) {
+        if (cell.title === entityCode || cell.value === entityCode) {
+          // Walk up to the row element
+          const row = cell.closest('[role="row"]');
+          return row && isVisible(row) ? row : null;
+        }
+      }
+      return null;
+    },
+    { timeout: 8_000, label: `grid row for entity "${entityCode}"` }
+  );
+
+  _log.ok(`Found matching row — clicking...`);
+  simulateClick(matchingRow);
+
+  // 6. Wait for D365 to finish refreshing
   await waitReady();
 
-  // 6. Confirm
+  // 7. Confirm
   const newCode = document.querySelector('#CompanyButton_button')?.textContent.trim();
   if (newCode !== entityCode) {
     _log.warn(`switchEntity: button shows "${newCode}" instead of "${entityCode}" — continuing anyway`);

@@ -382,32 +382,6 @@
     }
     return findByLabel(label) || findByText(label);
   }
-  function pressEnter(el) {
-    const opts = {
-      key: "Enter",
-      code: "Enter",
-      keyCode: 13,
-      which: 13,
-      bubbles: true,
-      cancelable: true
-    };
-    el.dispatchEvent(new KeyboardEvent("keydown", opts));
-    el.dispatchEvent(new KeyboardEvent("keypress", opts));
-    el.dispatchEvent(new KeyboardEvent("keyup", opts));
-  }
-  function pressTab(el) {
-    const opts = {
-      key: "Tab",
-      code: "Tab",
-      keyCode: 9,
-      which: 9,
-      bubbles: true,
-      cancelable: true
-    };
-    el.dispatchEvent(new KeyboardEvent("keydown", opts));
-    el.dispatchEvent(new KeyboardEvent("keypress", opts));
-    el.dispatchEvent(new KeyboardEvent("keyup", opts));
-  }
   async function switchEntity(entityCode) {
     const currentBtn = document.querySelector("#CompanyButton_button");
     if (!currentBtn) throw new Error("switchEntity: company button not found");
@@ -420,24 +394,34 @@
     simulateClick(currentBtn);
     const searchInput = await waitFor(
       () => {
-        const el = document.querySelector("#SysCompanyChooser_2_DataArea_id_input") || document.querySelector('#navigationbar_companychooser input[role="combobox"]') || document.querySelector("#SysCompanyChooser_2_DataArea_id input");
+        const el = document.querySelector("#SysCompanyChooser_2_DataArea_id_input");
         return el && isVisible(el) ? el : null;
       },
       { timeout: 1e4, label: "company chooser input" }
     );
-    _log.ok(`Found input: id=${searchInput.id}, title="${searchInput.title}"`);
+    _log.ok(`Found input: id=${searchInput.id}`);
     await fill(searchInput, entityCode);
-    await sleep(400);
-    _log.ok(`After fill: value="${searchInput.value}"`);
-    pressEnter(searchInput);
     await sleep(300);
-    const stillSame = document.querySelector("#CompanyButton_button")?.textContent.trim() === currentCode;
-    if (stillSame) {
-      _log.warn("Enter did not trigger switch \u2014 trying Tab + blur");
-      pressTab(searchInput);
-      await sleep(200);
-      searchInput.blur();
-    }
+    _log.ok(`After fill: value="${searchInput.value}"`);
+    const lookupBtn = document.querySelector("#SysCompanyChooser_2_DataArea_id .lookupButton");
+    if (!lookupBtn) throw new Error("switchEntity: lookup button not found");
+    simulateClick(lookupBtn);
+    _log.ok("Clicked lookup button \u2014 waiting for dropdown grid...");
+    const matchingRow = await waitFor(
+      () => {
+        const cells = document.querySelectorAll('[data-dyn-controlname="DataArea_id"] input[type="text"]');
+        for (const cell of cells) {
+          if (cell.title === entityCode || cell.value === entityCode) {
+            const row = cell.closest('[role="row"]');
+            return row && isVisible(row) ? row : null;
+          }
+        }
+        return null;
+      },
+      { timeout: 8e3, label: `grid row for entity "${entityCode}"` }
+    );
+    _log.ok(`Found matching row \u2014 clicking...`);
+    simulateClick(matchingRow);
     await waitReady();
     const newCode = document.querySelector("#CompanyButton_button")?.textContent.trim();
     if (newCode !== entityCode) {

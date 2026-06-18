@@ -21,7 +21,7 @@ const CSS = `
   width: 340px;
   max-height: calc(100vh - 70px);
   background: #1e1e2e;
-  color: #ffffff;
+  color: #cdd6f4;
   font-family: 'Segoe UI', system-ui, sans-serif;
   font-size: 13px;
   border-radius: 10px 0 0 10px;
@@ -107,7 +107,7 @@ const CSS = `
   background: #1e1e2e;
   border: 1px solid #45475a;
   border-radius: 5px;
-  color: #cdd6f4;
+  color: #ffffff;
   font-size: 12px;
   margin-bottom: 6px;
 }

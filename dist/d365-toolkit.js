@@ -138,6 +138,9 @@
       buttons: 0
     };
     el.dispatchEvent(new MouseEvent("mousedown", downOpts));
+    if (typeof el.focus === "function") {
+      el.focus();
+    }
     el.dispatchEvent(new MouseEvent("mouseup", upOpts));
     el.dispatchEvent(new MouseEvent("click", upOpts));
   }
@@ -746,6 +749,7 @@
           _log.error(`  ${job.jobId}: ${entry.note}`);
         }
         report.push(entry);
+        await selectRow(grid, rowEl, idx);
         idx++;
         await sleep(d365Config.stepDelayMs);
       }

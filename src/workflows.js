@@ -26,6 +26,7 @@ import {
   readCell, goToRow, findButton,
   switchEntity,
   createBlobInterceptor, downloadBlob, parseXlsx,
+  selectRow,
 } from './d365.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -238,6 +239,7 @@ const BatchJobMonitor = (() => {
       }
 
       report.push(entry);
+      await selectRow(grid, rowEl, idx); // Select again to deselect
       idx++;
       await sleep(d365Config.stepDelayMs);
     }

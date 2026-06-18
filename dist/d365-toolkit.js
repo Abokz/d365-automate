@@ -403,7 +403,7 @@
     return findByLabel(label) || findByText(label);
   }
   async function switchEntity(entityCode) {
-    (async function testSwitchEntity() {
+    await (async function testSwitchEntity() {
       function sleep2(ms) {
         return new Promise((r) => setTimeout(r, ms));
       }
@@ -440,7 +440,7 @@
         throw new Error(`waitFor timeout: ${label}`);
       }
       async function waitReady_t() {
-        await sleep2(1e3);
+        await sleep2(5e3);
       }
       console.log(`Switching to: ${entityCode}`);
       const companyBtn = document.querySelector("#CompanyButton_button");

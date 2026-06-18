@@ -246,7 +246,7 @@ function pressTab(el) {
  */
 
 async function switchEntity(entityCode) {
-  (async function testSwitchEntity() {
+  await (async function testSwitchEntity() {
     function sleep(ms) {
       return new Promise(r => setTimeout(r, ms));
     }
@@ -285,7 +285,7 @@ async function switchEntity(entityCode) {
     }
 
     async function waitReady_t() {
-      await sleep(1000);
+      await sleep(5000);
     }
 
     console.log(`Switching to: ${entityCode}`);

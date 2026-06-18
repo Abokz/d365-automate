@@ -11,7 +11,6 @@
 // Internal logger  (all toolkit output is prefixed so it's easy to filter)
 // ─────────────────────────────────────────────────────────────────────────────
 
-console.log('TOOLKIT BUILD 2026-06-18-2');
 
 const _log = {
   info:  (...a) => console.log( '%c[D365]', 'color:#4fc3f7;font-weight:bold', ...a),
@@ -19,6 +18,8 @@ const _log = {
   error: (...a) => console.error('%c[D365]', 'color:#ef5350;font-weight:bold', ...a),
   ok:    (...a) => console.log( '%c[D365]', 'color:#81c784;font-weight:bold', ...a),
 };
+
+console.log('TOOLKIT BUILD 2026-06-18-2');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // sleep / waitFor

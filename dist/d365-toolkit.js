@@ -333,13 +333,13 @@
   var _log, GM_BROWSER_HEADERS;
   var init_core = __esm({
     "src/core.js"() {
-      console.log("TOOLKIT BUILD 2026-06-18-2");
       _log = {
         info: (...a) => console.log("%c[D365]", "color:#4fc3f7;font-weight:bold", ...a),
         warn: (...a) => console.warn("%c[D365]", "color:#ffb74d;font-weight:bold", ...a),
         error: (...a) => console.error("%c[D365]", "color:#ef5350;font-weight:bold", ...a),
         ok: (...a) => console.log("%c[D365]", "color:#81c784;font-weight:bold", ...a)
       };
+      console.log("TOOLKIT BUILD 2026-06-18-2");
       GM_BROWSER_HEADERS = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",

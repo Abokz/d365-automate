@@ -17,6 +17,7 @@ import {
   fmtD365, fmtIxos,
   generateBatches, normalizeId,
   durationSeconds,
+  waitForD365Idle,
 } from './core.js';
 
 import {
@@ -115,7 +116,7 @@ const BatchJobMonitor = (() => {
       } else {
         history.back();
       }
-
+      await waitForD365Idle();
       try {
         await waitFor(
           () => getGrid('Batch job'),
@@ -241,7 +242,7 @@ const BatchJobMonitor = (() => {
       report.push(entry);
       await goToRow(grid, idx); // Select again to deselect
       idx++;
-      await sleep(5000);
+      await sleep(d365Config.stepDelayMs);
     }
 
     _lastReport = report;

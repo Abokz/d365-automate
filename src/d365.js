@@ -23,7 +23,7 @@ import {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const DEFAULT_CONFIG = {
-  stepDelayMs:          400,
+  stepDelayMs:          1000,
   navigationTimeoutMs:  25_000,
   historyRowTimeoutMs:  6_000,
   goToRowMaxAttempts:   80,

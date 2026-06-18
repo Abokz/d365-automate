@@ -29,6 +29,7 @@
     fmtIxos: () => fmtIxos,
     generateBatches: () => generateBatches,
     gmFetch: () => gmFetch,
+    isProcessing: () => isProcessing,
     isVisible: () => isVisible,
     normalizeId: () => normalizeId,
     parseDate: () => parseDate,
@@ -38,6 +39,7 @@
     simulateClick: () => simulateClick,
     sleep: () => sleep,
     waitFor: () => waitFor,
+    waitForD365Idle: () => waitForD365Idle,
     waitForGone: () => waitForGone
   });
   function sleep(ms) {
@@ -54,6 +56,29 @@
   }
   async function waitForGone(checkFn, { timeout = 15e3, interval = 200, label = "element to disappear" } = {}) {
     return waitFor(() => !checkFn(), { timeout, interval, label });
+  }
+  function isProcessing() {
+    const el = document.getElementById("ShellProcessingDiv");
+    if (!el) return false;
+    return el.offsetParent !== null && el.textContent?.includes("Please wait");
+  }
+  async function waitForD365Idle({
+    timeout = 3e4,
+    poll = 100
+  } = {}) {
+    const start = Date.now();
+    while (Date.now() - start < 1e3) {
+      if (isProcessing()) break;
+      await sleep(poll);
+    }
+    await waitFor(
+      () => !isProcessing(),
+      {
+        timeout,
+        interval: poll,
+        label: "D365 processing overlay to disappear"
+      }
+    );
   }
   function isVisible(el) {
     if (!el) return false;
@@ -336,7 +361,7 @@
   // src/d365.js
   init_core();
   var DEFAULT_CONFIG = {
-    stepDelayMs: 400,
+    stepDelayMs: 1e3,
     navigationTimeoutMs: 25e3,
     historyRowTimeoutMs: 6e3,
     goToRowMaxAttempts: 80
@@ -641,6 +666,7 @@
         } else {
           history.back();
         }
+        await waitForD365Idle();
         try {
           await waitFor(
             () => getGrid("Batch job"),
@@ -751,7 +777,7 @@
         report.push(entry);
         await goToRow(grid, idx);
         idx++;
-        await sleep(5e3);
+        await sleep(d365Config.stepDelayMs);
       }
       _lastReport = report;
       _printReport(report);

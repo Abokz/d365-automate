@@ -52,6 +52,40 @@ async function waitForGone(checkFn, { timeout = 15_000, interval = 200, label = 
   return waitFor(() => !checkFn(), { timeout, interval, label });
 }
 
+function isProcessing() {
+    const el = document.getElementById('ShellProcessingDiv');
+
+    if (!el) return false;
+
+    return (
+        el.offsetParent !== null &&
+        el.textContent?.includes('Please wait')
+    );
+}
+
+async function waitForD365Idle({
+    timeout = 30000,
+    poll = 100
+} = {}) {
+    const start = Date.now();
+
+    // Give the overlay a chance to appear.
+    while (Date.now() - start < 1000) {
+        if (isProcessing()) break;
+        await sleep(poll);
+    }
+
+    // Wait until it's gone.
+    await waitFor(
+        () => !isProcessing(),
+        {
+            timeout,
+            interval: poll,
+            label: 'D365 processing overlay to disappear'
+        }
+    );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Visibility
 // ─────────────────────────────────────────────────────────────────────────────
@@ -475,6 +509,8 @@ export {
   sleep,
   waitFor,
   waitForGone,
+  isProcessing,
+  waitForD365Idle,
   isVisible,
   query,
   findByText,

@@ -382,24 +382,31 @@
     }
     return findByLabel(label) || findByText(label);
   }
-  function pressKey(el, key, code = key) {
-    el.dispatchEvent(
-      new KeyboardEvent("keydown", {
-        key,
-        code,
-        bubbles: true
-      })
-    );
-    el.dispatchEvent(
-      new KeyboardEvent("keyup", {
-        key,
-        code,
-        bubbles: true
-      })
-    );
-  }
   function pressEnter(el) {
-    pressKey(el, "Enter", "Enter");
+    const opts = {
+      key: "Enter",
+      code: "Enter",
+      keyCode: 13,
+      which: 13,
+      bubbles: true,
+      cancelable: true
+    };
+    el.dispatchEvent(new KeyboardEvent("keydown", opts));
+    el.dispatchEvent(new KeyboardEvent("keypress", opts));
+    el.dispatchEvent(new KeyboardEvent("keyup", opts));
+  }
+  function pressTab(el) {
+    const opts = {
+      key: "Tab",
+      code: "Tab",
+      keyCode: 9,
+      which: 9,
+      bubbles: true,
+      cancelable: true
+    };
+    el.dispatchEvent(new KeyboardEvent("keydown", opts));
+    el.dispatchEvent(new KeyboardEvent("keypress", opts));
+    el.dispatchEvent(new KeyboardEvent("keyup", opts));
   }
   async function switchEntity(entityCode) {
     const currentBtn = document.querySelector("#CompanyButton_button");
@@ -423,6 +430,14 @@
     await sleep(400);
     _log.ok(`After fill: value="${searchInput.value}"`);
     pressEnter(searchInput);
+    await sleep(300);
+    const stillSame = document.querySelector("#CompanyButton_button")?.textContent.trim() === currentCode;
+    if (stillSame) {
+      _log.warn("Enter did not trigger switch \u2014 trying Tab + blur");
+      pressTab(searchInput);
+      await sleep(200);
+      searchInput.blur();
+    }
     await waitReady();
     const newCode = document.querySelector("#CompanyButton_button")?.textContent.trim();
     if (newCode !== entityCode) {

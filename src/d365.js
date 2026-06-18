@@ -207,7 +207,31 @@ function pressKey(el, key, code = key) {
 }
 
 function pressEnter(el) {
-  pressKey(el, "Enter", "Enter");
+  const opts = {
+    key: 'Enter',
+    code: 'Enter',
+    keyCode: 13,
+    which: 13,
+    bubbles: true,
+    cancelable: true,
+  };
+  el.dispatchEvent(new KeyboardEvent('keydown',  opts));
+  el.dispatchEvent(new KeyboardEvent('keypress', opts)); // D365 may listen to this
+  el.dispatchEvent(new KeyboardEvent('keyup',    opts));
+}
+
+function pressTab(el) {
+  const opts = {
+    key: 'Tab',
+    code: 'Tab',
+    keyCode: 9,
+    which: 9,
+    bubbles: true,
+    cancelable: true,
+  };
+  el.dispatchEvent(new KeyboardEvent('keydown',  opts));
+  el.dispatchEvent(new KeyboardEvent('keypress', opts));
+  el.dispatchEvent(new KeyboardEvent('keyup',    opts));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -259,6 +283,17 @@ async function switchEntity(entityCode) {
 
   // 4. Press Enter to confirm — hits the keyDown binding D365 listens to
   pressEnter(searchInput);
+  await sleep(300);
+
+  
+  // If still not navigated, force blur to trigger focusOutCallBack
+  const stillSame = document.querySelector('#CompanyButton_button')?.textContent.trim() === currentCode;
+  if (stillSame) {
+    _log.warn('Enter did not trigger switch — trying Tab + blur');
+    pressTab(searchInput);
+    await sleep(200);
+    searchInput.blur();
+  }
 
   // 5. Wait for D365 to finish refreshing
   await waitReady();

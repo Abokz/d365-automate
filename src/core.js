@@ -139,19 +139,6 @@ function simulateClick(el) {
   el.dispatchEvent(new MouseEvent('click', upOpts));
 }
 
-async function simulateClickRow(el) {
-  if (!el) throw new Error('simulateClickRow: element is null');
-  const opts = { bubbles: true, cancelable: true, view: window };
-  el.dispatchEvent(new MouseEvent('mouseover',   { ...opts, bubbles: true }));
-  el.dispatchEvent(new MouseEvent('mouseenter',  { ...opts, bubbles: false }));
-  await sleep(1000);
-  el.dispatchEvent(new MouseEvent('mousedown',   opts));
-  el.dispatchEvent(new MouseEvent('mouseup',     opts));
-  el.dispatchEvent(new MouseEvent('click',       opts));
-  await sleep(1000);
-  el.dispatchEvent(new MouseEvent('dblclick',    opts));
-}
-
 /**
  * Click the first visible element matching `selector`.
  * @param {string|Element} target  CSS selector or element reference
@@ -443,7 +430,6 @@ export {
   findByText,
   findByLabel,
   simulateClick,
-  simulateClickRow,
   click,
   fill,
   press,

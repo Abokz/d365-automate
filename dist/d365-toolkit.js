@@ -35,7 +35,6 @@
     query: () => query,
     scrollGrid: () => scrollGrid,
     simulateClick: () => simulateClick,
-    simulateClickRow: () => simulateClickRow,
     sleep: () => sleep,
     waitFor: () => waitFor,
     waitForGone: () => waitForGone
@@ -103,18 +102,6 @@
     if (typeof el.focus === "function") el.focus();
     el.dispatchEvent(new MouseEvent("mouseup", upOpts));
     el.dispatchEvent(new MouseEvent("click", upOpts));
-  }
-  async function simulateClickRow(el) {
-    if (!el) throw new Error("simulateClickRow: element is null");
-    const opts = { bubbles: true, cancelable: true, view: window };
-    el.dispatchEvent(new MouseEvent("mouseover", { ...opts, bubbles: true }));
-    el.dispatchEvent(new MouseEvent("mouseenter", { ...opts, bubbles: false }));
-    await sleep(1e3);
-    el.dispatchEvent(new MouseEvent("mousedown", opts));
-    el.dispatchEvent(new MouseEvent("mouseup", opts));
-    el.dispatchEvent(new MouseEvent("click", opts));
-    await sleep(1e3);
-    el.dispatchEvent(new MouseEvent("dblclick", opts));
   }
   async function click(target, { timeout = 15e3, root = document } = {}) {
     let el;

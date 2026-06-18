@@ -419,7 +419,22 @@
     );
     await fill(searchInput, entityCode);
     await sleep(600);
+    const listItem = await waitFor(
+      () => {
+        const items = document.querySelectorAll(
+          '[role="option"], [role="listitem"], [role="row"], .navigationBar-companyListItem'
+        );
+        for (const item of items) {
+          if (isVisible(item) && item.textContent.trim().startsWith(entityCode)) {
+            return item;
+          }
+        }
+        return null;
+      },
+      { timeout: 8e3, label: `company list item for "${entityCode}"` }
+    );
     pressEnter(searchInput);
+    simulateClick(listItem);
     await waitReady();
     const newCode = document.querySelector("#CompanyButton_button")?.textContent.trim();
     if (newCode !== entityCode) {

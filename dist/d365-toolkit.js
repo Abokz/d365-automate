@@ -522,7 +522,7 @@
   init_core();
   var BatchJobMonitor = /* @__PURE__ */ (() => {
     const CONFIG = {
-      shortDurationThresholdSec: 30,
+      shortDurationThresholdSec: 10,
       // flag jobs that ran < this many seconds
       retriesPerJob: 1,
       maxJobs: null

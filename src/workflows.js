@@ -41,7 +41,7 @@ import {
 const BatchJobMonitor = (() => {
 
   const CONFIG = {
-    shortDurationThresholdSec: 30,   // flag jobs that ran < this many seconds
+    shortDurationThresholdSec: 10,   // flag jobs that ran < this many seconds
     retriesPerJob: 1,
     maxJobs: null,                   // null = all; set a number to limit test runs
   };

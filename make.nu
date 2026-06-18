@@ -1,4 +1,4 @@
 npm run build
 git add .
-git commit -m "Color updated"
+git commit -m "Default secs for batchjob monitoring updated"
 git push

@@ -333,7 +333,7 @@
   var _log, GM_BROWSER_HEADERS;
   var init_core = __esm({
     "src/core.js"() {
-      console.log("TOOLKIT BUILD 2026-06-18-2359");
+      console.log("TOOLKIT BUILD 2026-06-18-1");
       _log = {
         info: (...a) => console.log("%c[D365]", "color:#4fc3f7;font-weight:bold", ...a),
         warn: (...a) => console.warn("%c[D365]", "color:#ffb74d;font-weight:bold", ...a),
@@ -1567,6 +1567,8 @@
     downloadBlob,
     loadSheetJS,
     parseXlsx,
+    isProcessing,
+    waitForD365Idle,
     // ── workflows ─────────────────────────────────────────────────────────────
     workflows,
     BatchJobMonitor,

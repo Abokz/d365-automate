@@ -11,7 +11,7 @@
 // Internal logger  (all toolkit output is prefixed so it's easy to filter)
 // ─────────────────────────────────────────────────────────────────────────────
 
-console.log('TOOLKIT BUILD 2026-06-18-2359');
+console.log('TOOLKIT BUILD 2026-06-18-1');
 
 const _log = {
   info:  (...a) => console.log( '%c[D365]', 'color:#4fc3f7;font-weight:bold', ...a),

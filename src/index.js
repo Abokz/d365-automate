@@ -8,7 +8,7 @@
 
 import {
   _log,
-  sleep, waitFor, waitForGone,
+  sleep, waitFor, waitForGone, isProcessing, waitForD365Idle,
   isVisible, query, findByText, findByLabel,
   simulateClick, click, fill, press, scrollGrid,
   gmFetch, exportCsv,
@@ -81,6 +81,8 @@ const D365Toolkit = {
   downloadBlob,
   loadSheetJS,
   parseXlsx,
+  isProcessing,
+  waitForD365Idle,
 
   // ── workflows ─────────────────────────────────────────────────────────────
   workflows,

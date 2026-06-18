@@ -206,6 +206,10 @@ function pressKey(el, key, code = key) {
   );
 }
 
+function pressEnter(el) {
+  pressKey(el, "Enter", "Enter");
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Entity / company switching
 // ─────────────────────────────────────────────────────────────────────────────
@@ -219,70 +223,48 @@ function pressKey(el, key, code = key) {
 async function switchEntity(entityCode) {
   const currentBtn = document.querySelector('#CompanyButton_button');
   if (!currentBtn) throw new Error('switchEntity: company button not found');
-
   const currentCode = currentBtn.textContent.trim();
   if (currentCode === entityCode) {
     _log.info(`Already on entity ${entityCode} — skipping switch`);
     return;
   }
-
   _log.info(`Switching entity: ${currentCode} → ${entityCode}`);
 
   // 1. Open the picker
   simulateClick(currentBtn);
 
-  // 2. Wait for the search input to appear
+  // 2. Wait for the company input to appear
   const searchInput = await waitFor(
     () => {
-      // D365 shows a dialog/panel with a search box — try common selectors
       return (
-        query('input[aria-label*="company" i]',   { visibleOnly: true }) ||
-        query('input[aria-label*="entity" i]',     { visibleOnly: true }) ||
-        query('input[placeholder*="Search" i]',    { visibleOnly: true }) ||
-        query('.navigationBar-searchInput input',  { visibleOnly: true }) ||
-        query('[data-dyn-controlname*="Company"] input', { visibleOnly: true })
+        query('input[aria-label="Current company"]',          { visibleOnly: true }) ||
+        query('input[name="DataArea_id"]',                    { visibleOnly: true }) ||
+        query('input[id*="DataArea_id"]',                    { visibleOnly: true }) ||
+        query('input[aria-label*="company" i]',               { visibleOnly: true }) ||
+        query('input[aria-label*="entity" i]',                { visibleOnly: true }) ||
+        query('input[placeholder*="Search" i]',               { visibleOnly: true }) ||
+        query('.navigationBar-searchInput input',             { visibleOnly: true }) ||
+        query('[data-dyn-controlname*="Company"] input',      { visibleOnly: true })
       );
     },
     { timeout: 10_000, label: 'company picker search input' }
   );
 
-  _log.ok("---BEFORE----");
-  _log.ok(`1. ${searchInput.isConnected}`);
-  _log.ok(`2. ${searchInput.value}`);
-  _log.ok(`3. ${document.activeElement === searchInput}`);
+  _log.ok(`Found input: id=${searchInput.id}, value="${searchInput.value}"`);
 
-  // 3. Type the entity code
+  // 3. Fill the entity code
   await fill(searchInput, entityCode);
-  await sleep(600); // let the list filter
+  await sleep(400); // let D365 process the input binding
 
-  _log.ok("---After----");
-  _log.ok(`1. ${searchInput.isConnected}`);
-  _log.ok(`2. ${searchInput.value}`);
-  _log.ok(`3. ${document.activeElement === searchInput}`);
+  _log.ok(`After fill: value="${searchInput.value}", connected=${searchInput.isConnected}`);
 
-  // 4. Click the matching list item
-  const listItem = await waitFor(
-    () => {
-      // Look for an option/row whose text exactly matches the entity code
-      const items = document.querySelectorAll(
-        '[role="option"], [role="listitem"], [role="row"], .navigationBar-companyListItem'
-      );
-      for (const item of items) {
-        if (isVisible(item) && item.textContent.trim().startsWith(entityCode)) {
-          return item;
-        }
-      }
-      return null;
-    },
-    { timeout: 8_000, label: `company list item for "${entityCode}"` }
-  );
+  // 4. Confirm with Enter (Tab also works but may shift focus unexpectedly)
+  pressEnter(searchInput);
 
-  simulateClick(listItem);
-
-  // 5. Wait for D365 to finish refreshing the page data
+  // 5. Wait for D365 to finish refreshing
   await waitReady();
 
-  // Confirm the switch
+  // 6. Confirm the switch
   const newCode = document.querySelector('#CompanyButton_button')?.textContent.trim();
   if (newCode !== entityCode) {
     _log.warn(`switchEntity: button shows "${newCode}" instead of "${entityCode}" — continuing anyway`);

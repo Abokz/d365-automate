@@ -382,6 +382,25 @@
     }
     return findByLabel(label) || findByText(label);
   }
+  function pressKey(el, key, code = key) {
+    el.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key,
+        code,
+        bubbles: true
+      })
+    );
+    el.dispatchEvent(
+      new KeyboardEvent("keyup", {
+        key,
+        code,
+        bubbles: true
+      })
+    );
+  }
+  function pressEnter(el) {
+    pressKey(el, "Enter", "Enter");
+  }
   async function switchEntity(entityCode) {
     const currentBtn = document.querySelector("#CompanyButton_button");
     if (!currentBtn) throw new Error("switchEntity: company button not found");
@@ -394,35 +413,15 @@
     simulateClick(currentBtn);
     const searchInput = await waitFor(
       () => {
-        return query('input[aria-label*="company" i]', { visibleOnly: true }) || query('input[aria-label*="entity" i]', { visibleOnly: true }) || query('input[placeholder*="Search" i]', { visibleOnly: true }) || query(".navigationBar-searchInput input", { visibleOnly: true }) || query('[data-dyn-controlname*="Company"] input', { visibleOnly: true });
+        return query('input[aria-label="Current company"]', { visibleOnly: true }) || query('input[name="DataArea_id"]', { visibleOnly: true }) || query('input[id*="DataArea_id"]', { visibleOnly: true }) || query('input[aria-label*="company" i]', { visibleOnly: true }) || query('input[aria-label*="entity" i]', { visibleOnly: true }) || query('input[placeholder*="Search" i]', { visibleOnly: true }) || query(".navigationBar-searchInput input", { visibleOnly: true }) || query('[data-dyn-controlname*="Company"] input', { visibleOnly: true });
       },
       { timeout: 1e4, label: "company picker search input" }
     );
-    _log.ok("---BEFORE----");
-    _log.ok(`1. ${searchInput.isConnected}`);
-    _log.ok(`2. ${searchInput.value}`);
-    _log.ok(`3. ${document.activeElement === searchInput}`);
+    _log.ok(`Found input: id=${searchInput.id}, value="${searchInput.value}"`);
     await fill(searchInput, entityCode);
-    await sleep(600);
-    _log.ok("---After----");
-    _log.ok(`1. ${searchInput.isConnected}`);
-    _log.ok(`2. ${searchInput.value}`);
-    _log.ok(`3. ${document.activeElement === searchInput}`);
-    const listItem = await waitFor(
-      () => {
-        const items = document.querySelectorAll(
-          '[role="option"], [role="listitem"], [role="row"], .navigationBar-companyListItem'
-        );
-        for (const item of items) {
-          if (isVisible(item) && item.textContent.trim().startsWith(entityCode)) {
-            return item;
-          }
-        }
-        return null;
-      },
-      { timeout: 8e3, label: `company list item for "${entityCode}"` }
-    );
-    simulateClick(listItem);
+    await sleep(400);
+    _log.ok(`After fill: value="${searchInput.value}", connected=${searchInput.isConnected}`);
+    pressEnter(searchInput);
     await waitReady();
     const newCode = document.querySelector("#CompanyButton_button")?.textContent.trim();
     if (newCode !== entityCode) {

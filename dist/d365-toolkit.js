@@ -419,7 +419,10 @@
       { timeout: 8e3, label: `grid textbox for entity "${entityCode}"` }
     );
     _log.ok(`Found matching cell \u2014 clicking...`);
-    simulateClick(matchingCell);
+    const row = matchingCell.closest('[role="row"]');
+    if (!row) throw new Error("switchEntity: could not find parent row");
+    _log.ok(`Row id: ${row.id}`);
+    await simulateClickRow(row);
     await waitReady();
     const newCode = document.querySelector("#CompanyButton_button")?.textContent.trim();
     if (newCode !== entityCode) {

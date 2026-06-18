@@ -297,7 +297,12 @@ async function switchEntity(entityCode) {
   );
 
   _log.ok(`Found matching cell — clicking...`);
-  simulateClick(matchingCell);
+
+  const row = matchingCell.closest('[role="row"]');
+  if (!row) throw new Error('switchEntity: could not find parent row');
+
+  _log.ok(`Row id: ${row.id}`);
+  await simulateClickRow(row);
 
   // 6. Wait for D365 to finish refreshing
   await waitReady();

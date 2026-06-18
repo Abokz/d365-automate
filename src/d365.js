@@ -274,22 +274,25 @@ async function switchEntity(entityCode) {
   await sleep(400);
   _log.ok(`Filled: "${searchInput.value}"`);
 
-  // 4. Click the lookup button — commits the value and triggers the switch
+  // 4. Click the lookup button
   const lookupBtn = document.querySelector('#SysCompanyChooser_2_DataArea_id .lookupButton');
   if (!lookupBtn) throw new Error('switchEntity: lookup button not found');
   simulateClick(lookupBtn);
-  _log.ok('Clicked lookup button — waiting for page to refresh...');
+  _log.ok('Clicked lookup button — waiting for entity switch...');
 
-  // 5. Wait for D365 to finish refreshing
+  // 5. Wait until the company button actually shows the new entity code
+  await waitFor(
+    () => {
+      const btn = document.querySelector('#CompanyButton_button');
+      return btn && btn.textContent.trim() === entityCode ? btn : null;
+    },
+    { timeout: 30_000, label: `company button to show "${entityCode}"` }
+  );
+
+  // 6. Wait for D365 to finish refreshing the page data after the switch
   await waitReady();
 
-  // 6. Confirm
-  const newCode = document.querySelector('#CompanyButton_button')?.textContent.trim();
-  if (newCode !== entityCode) {
-    _log.warn(`switchEntity: button shows "${newCode}" instead of "${entityCode}" — continuing anyway`);
-  } else {
-    _log.ok(`Switched to entity ${entityCode}`);
-  }
+  _log.ok(`Switched to entity ${entityCode}`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -426,14 +426,16 @@
     const lookupBtn = document.querySelector("#SysCompanyChooser_2_DataArea_id .lookupButton");
     if (!lookupBtn) throw new Error("switchEntity: lookup button not found");
     simulateClick(lookupBtn);
-    _log.ok("Clicked lookup button \u2014 waiting for page to refresh...");
+    _log.ok("Clicked lookup button \u2014 waiting for entity switch...");
+    await waitFor(
+      () => {
+        const btn = document.querySelector("#CompanyButton_button");
+        return btn && btn.textContent.trim() === entityCode ? btn : null;
+      },
+      { timeout: 3e4, label: `company button to show "${entityCode}"` }
+    );
     await waitReady();
-    const newCode = document.querySelector("#CompanyButton_button")?.textContent.trim();
-    if (newCode !== entityCode) {
-      _log.warn(`switchEntity: button shows "${newCode}" instead of "${entityCode}" \u2014 continuing anyway`);
-    } else {
-      _log.ok(`Switched to entity ${entityCode}`);
-    }
+    _log.ok(`Switched to entity ${entityCode}`);
   }
   async function navigate(module, entity = null) {
     if (entity) await switchEntity(entity);

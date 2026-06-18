@@ -15,7 +15,7 @@
 import {
   _log, sleep, waitFor, waitForGone,
   isVisible, query, findByText, findByLabel,
-  simulateClick, click, fill, press, scrollGrid,
+  simulateClick, simulateClickRow, click, fill, press, scrollGrid,
 } from './core.js';
 
 // ─────────────────────────────────────────────────────────────────────────────

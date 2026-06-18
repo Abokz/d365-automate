@@ -430,6 +430,7 @@ export {
   findByText,
   findByLabel,
   simulateClick,
+  simulateClickRow,
   click,
   fill,
   press,

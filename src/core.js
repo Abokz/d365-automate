@@ -111,6 +111,40 @@ function findByLabel(label, { root = document, visibleOnly = true } = {}) {
   return null;
 }
 
+/**
+ * Find clickable element in an element.
+ */
+function findClickable(el) {
+    if (!el) return null;
+
+    const selectors = [
+        '.dyn-headerCell',
+        '[data-dyn-columnname]',
+        '[role="button"]',
+        'button',
+        'a[href]',
+        '[onclick]',
+        '[tabindex]'
+    ];
+
+    // If the element itself matches
+    for (const selector of selectors) {
+        if (el.matches?.(selector)) {
+            return el;
+        }
+    }
+
+    // Search descendants
+    for (const selector of selectors) {
+        const found = el.querySelector(selector);
+        if (found) {
+            return found;
+        }
+    }
+
+    return el;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Click / fill — Playwright-style
 // ─────────────────────────────────────────────────────────────────────────────
@@ -120,23 +154,39 @@ function findByLabel(label, { root = document, visibleOnly = true } = {}) {
  */
 
 function simulateClick(el) {
-  if (!el) throw new Error('simulateClick: element is null');
-  const rect = el.getBoundingClientRect();
-  const cx = rect.left + rect.width / 2;
-  const cy = rect.top + rect.height / 2;
-  const downOpts = { bubbles: true, cancelable: true, view: window, clientX: cx, clientY: cy, button: 0, buttons: 1 };
-  const upOpts   = { ...downOpts, buttons: 0 };
+    if (!el) {
+        throw new Error('simulateClick: element is null');
+    }
 
-  el.dispatchEvent(new MouseEvent('mousedown', downOpts));
+    el = findClickable(el);
 
-  // Real mousedown implicitly focuses a focusable target as a native browser
-  // default — dispatchEvent skips that default entirely, so we do it
-  // ourselves. This element's data-dyn-focus="input" attribute is exactly
-  // the marker that this row's selection is wired to focus, not click.
-  if (typeof el.focus === 'function') el.focus();
+    const rect = el.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
 
-  el.dispatchEvent(new MouseEvent('mouseup', upOpts));
-  el.dispatchEvent(new MouseEvent('click', upOpts));
+    const downOpts = {
+        bubbles: true,
+        cancelable: true,
+        view: window,
+        clientX: cx,
+        clientY: cy,
+        button: 0,
+        buttons: 1
+    };
+
+    const upOpts = {
+        ...downOpts,
+        buttons: 0
+    };
+
+    el.dispatchEvent(new MouseEvent('mousedown', downOpts));
+
+    if (typeof el.focus === 'function') {
+        el.focus();
+    }
+
+    el.dispatchEvent(new MouseEvent('mouseup', upOpts));
+    el.dispatchEvent(new MouseEvent('click', upOpts));
 }
 
 /**
@@ -429,6 +479,7 @@ export {
   query,
   findByText,
   findByLabel,
+  findClickable,
   simulateClick,
   click,
   fill,

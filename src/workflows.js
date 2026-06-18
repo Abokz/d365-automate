@@ -419,10 +419,7 @@ const InvoiceCrossCheck = (() => {
       if (!grid) throw new Error('Invoice journal grid not found');
 
       // Click the "Created date and time" column filter header
-      const dateHeader = findButton('Created date and time') ||
-        Array.from(document.querySelectorAll('[role="columnheader"]'))
-          .find(h => h.textContent.includes('Created date'));
-
+      const dateHeader = findButton('Created date and time');
       if (dateHeader) {
         dateHeader.dispatchEvent(new MouseEvent('click', { bubbles: true }));
         await sleep(400);

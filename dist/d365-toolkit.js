@@ -24,6 +24,7 @@
     fill: () => fill,
     findByLabel: () => findByLabel,
     findByText: () => findByText,
+    findClickable: () => findClickable,
     fmtD365: () => fmtD365,
     fmtIxos: () => fmtIxos,
     generateBatches: () => generateBatches,
@@ -91,15 +92,55 @@
     }
     return null;
   }
+  function findClickable(el) {
+    if (!el) return null;
+    const selectors = [
+      ".dyn-headerCell",
+      "[data-dyn-columnname]",
+      '[role="button"]',
+      "button",
+      "a[href]",
+      "[onclick]",
+      "[tabindex]"
+    ];
+    for (const selector of selectors) {
+      if (el.matches?.(selector)) {
+        return el;
+      }
+    }
+    for (const selector of selectors) {
+      const found = el.querySelector(selector);
+      if (found) {
+        return found;
+      }
+    }
+    return el;
+  }
   function simulateClick(el) {
-    if (!el) throw new Error("simulateClick: element is null");
+    if (!el) {
+      throw new Error("simulateClick: element is null");
+    }
+    el = findClickable(el);
     const rect = el.getBoundingClientRect();
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
-    const downOpts = { bubbles: true, cancelable: true, view: window, clientX: cx, clientY: cy, button: 0, buttons: 1 };
-    const upOpts = { ...downOpts, buttons: 0 };
+    const downOpts = {
+      bubbles: true,
+      cancelable: true,
+      view: window,
+      clientX: cx,
+      clientY: cy,
+      button: 0,
+      buttons: 1
+    };
+    const upOpts = {
+      ...downOpts,
+      buttons: 0
+    };
     el.dispatchEvent(new MouseEvent("mousedown", downOpts));
-    if (typeof el.focus === "function") el.focus();
+    if (typeof el.focus === "function") {
+      el.focus();
+    }
     el.dispatchEvent(new MouseEvent("mouseup", upOpts));
     el.dispatchEvent(new MouseEvent("click", upOpts));
   }
@@ -826,7 +867,7 @@
         await waitReady('[role="grid"]');
         const grid = document.querySelector('[role="grid"]');
         if (!grid) throw new Error("Invoice journal grid not found");
-        const dateHeader = findButton("Created date and time") || Array.from(document.querySelectorAll('[role="columnheader"]')).find((h) => h.textContent.includes("Created date"));
+        const dateHeader = findButton("Created date and time");
         if (dateHeader) {
           dateHeader.dispatchEvent(new MouseEvent("click", { bubbles: true }));
           await sleep(400);

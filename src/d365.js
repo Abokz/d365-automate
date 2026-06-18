@@ -270,7 +270,7 @@ async function switchEntity(entityCode) {
     },
     { timeout: 8_000, label: `company list item for "${entityCode}"` }
   );
-  pressEnter(searchInput);
+
   simulateClick(listItem);
 
   // 5. Wait for D365 to finish refreshing the page data

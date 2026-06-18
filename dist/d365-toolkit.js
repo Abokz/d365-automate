@@ -97,13 +97,12 @@
     const rect = el.getBoundingClientRect();
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
-    const target = document.elementFromPoint(cx, cy) || el;
-    const opts = { bubbles: true, cancelable: true, view: window, clientX: cx, clientY: cy };
-    target.dispatchEvent(new PointerEvent("pointerdown", { ...opts, pointerId: 1, isPrimary: true }));
-    target.dispatchEvent(new MouseEvent("mousedown", opts));
-    target.dispatchEvent(new PointerEvent("pointerup", { ...opts, pointerId: 1, isPrimary: true }));
-    target.dispatchEvent(new MouseEvent("mouseup", opts));
-    target.dispatchEvent(new MouseEvent("click", opts));
+    const downOpts = { bubbles: true, cancelable: true, view: window, clientX: cx, clientY: cy, button: 0, buttons: 1 };
+    const upOpts = { ...downOpts, buttons: 0 };
+    el.dispatchEvent(new MouseEvent("mousedown", downOpts));
+    if (typeof el.focus === "function") el.focus();
+    el.dispatchEvent(new MouseEvent("mouseup", upOpts));
+    el.dispatchEvent(new MouseEvent("click", upOpts));
   }
   async function simulateClickRow(el) {
     if (!el) throw new Error("simulateClickRow: element is null");

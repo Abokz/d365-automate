@@ -118,27 +118,25 @@ function findByLabel(label, { root = document, visibleOnly = true } = {}) {
 /**
  * Dispatch a realistic mouse-event sequence on an element.
  */
+
 function simulateClick(el) {
   if (!el) throw new Error('simulateClick: element is null');
   const rect = el.getBoundingClientRect();
   const cx = rect.left + rect.width / 2;
   const cy = rect.top + rect.height / 2;
+  const downOpts = { bubbles: true, cancelable: true, view: window, clientX: cx, clientY: cy, button: 0, buttons: 1 };
+  const upOpts   = { ...downOpts, buttons: 0 };
 
-  // Mimic real hit-testing instead of forcing the event onto `el` directly —
-  // if `el` has pointer-events:none or is just a display node inside a
-  // wrapper that owns the actual handler, a real click (and Playwright)
-  // would land on that wrapper, not on `el` itself.
-  const target = document.elementFromPoint(cx, cy) || el;
+  el.dispatchEvent(new MouseEvent('mousedown', downOpts));
 
-  const opts = { bubbles: true, cancelable: true, view: window, clientX: cx, clientY: cy };
+  // Real mousedown implicitly focuses a focusable target as a native browser
+  // default — dispatchEvent skips that default entirely, so we do it
+  // ourselves. This element's data-dyn-focus="input" attribute is exactly
+  // the marker that this row's selection is wired to focus, not click.
+  if (typeof el.focus === 'function') el.focus();
 
-  // Cover both event models — some grid components only listen for
-  // PointerEvent, others only for legacy MouseEvent.
-  target.dispatchEvent(new PointerEvent('pointerdown', { ...opts, pointerId: 1, isPrimary: true }));
-  target.dispatchEvent(new MouseEvent('mousedown', opts));
-  target.dispatchEvent(new PointerEvent('pointerup',   { ...opts, pointerId: 1, isPrimary: true }));
-  target.dispatchEvent(new MouseEvent('mouseup',   opts));
-  target.dispatchEvent(new MouseEvent('click',     opts));
+  el.dispatchEvent(new MouseEvent('mouseup', upOpts));
+  el.dispatchEvent(new MouseEvent('click', upOpts));
 }
 
 async function simulateClickRow(el) {

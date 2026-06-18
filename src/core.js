@@ -214,36 +214,99 @@ function scrollGrid(gridEl, amount = 150) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Fetch a URL via TamperMonkey's GM_xmlhttpRequest (bypasses CORS).
- * Falls back to window.fetch if GM_xmlhttpRequest is not available
- * (e.g. during local dev / unit tests).
+ * Default browser-realistic headers sent with every gmFetch request.
+ * Mimics a real Edge 125 / Windows 11 request so intranet servers
+ * (like IXOS) don't reject the call as a bot.
+ *
+ * The TamperMonkey loader exposes GM_xmlhttpRequest onto window as
+ * window.gmXmlHttpRequest so the bundled script (which runs in the page
+ * context, not the TamperMonkey sandbox) can reach it.
+ */
+const GM_BROWSER_HEADERS = {
+  'User-Agent':
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' +
+    'AppleWebKit/537.36 (KHTML, like Gecko) ' +
+    'Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0',
+  'Accept':
+    'text/html,application/xhtml+xml,application/xml;q=0.9,' +
+    'image/avif,image/webp,image/apng,*/*;q=0.8,' +
+    'application/signed-exchange;v=b3;q=0.7',
+  'Accept-Language':           'en-US,en;q=0.9',
+  'Accept-Encoding':           'gzip, deflate, br',
+  'Connection':                'keep-alive',
+  'Cache-Control':             'max-age=0',
+  'Upgrade-Insecure-Requests': '1',
+  'Sec-Fetch-Dest':            'document',
+  'Sec-Fetch-Mode':            'navigate',
+  'Sec-Fetch-Site':            'none',
+  'Sec-Fetch-User':            '?1',
+};
+
+/**
+ * Fetch a URL via TamperMonkey's GM_xmlhttpRequest (bypasses CORS /
+ * intranet restrictions).
+ *
+ * HOW THE BRIDGE WORKS
+ * ────────────────────
+ * GM_xmlhttpRequest lives in the TamperMonkey sandbox, not in the page's
+ * JS context. The bundled toolkit runs in the page context, so it cannot
+ * access GM_xmlhttpRequest directly. The TamperMonkey loader script solves
+ * this by wrapping the function and attaching it to window:
+ *
+ *   window.gmXmlHttpRequest = (opts) => GM_xmlhttpRequest(opts);
+ *
+ * This function then calls window.gmXmlHttpRequest, which crosses the
+ * sandbox boundary back into TamperMonkey.
  *
  * @param {string} url
  * @param {object} opts
- * @param {string} opts.method       default 'GET'
- * @param {object} opts.headers      request headers
- * @param {string} opts.body         request body (for POST)
- * @param {number} opts.timeout      ms (default 180 000)
- * @returns {Promise<{status:number, text:string, headers:object}>}
+ * @param {string} opts.method        default 'GET'
+ * @param {object} opts.extraHeaders  merged on top of GM_BROWSER_HEADERS
+ * @param {string} opts.body          request body for POST
+ * @param {string} opts.referer       Referer header (defaults to target origin)
+ * @param {number} opts.timeout       ms (default 180 000)
+ * @returns {Promise<{status:number, text:string, headers:string}>}
  */
-function gmFetch(url, { method = 'GET', headers = {}, body = null, timeout = 180_000 } = {}) {
-  if (typeof GM_xmlhttpRequest === 'undefined' && typeof GM === 'undefined') {
-    _log.warn('GM_xmlhttpRequest not available — falling back to window.fetch (CORS may block)');
-    return window.fetch(url, { method, headers, body })
-      .then(async r => ({ status: r.status, text: await r.text(), headers: {} }));
+function gmFetch(url, {
+  method       = 'GET',
+  extraHeaders = {},
+  body         = null,
+  referer      = null,
+  timeout      = 180_000,
+} = {}) {
+
+  // Resolve the bridge function placed on window by the TamperMonkey loader
+  const bridge = window.gmXmlHttpRequest;
+
+  if (typeof bridge !== 'function') {
+    _log.warn(
+      'window.gmXmlHttpRequest not found — ' +
+      'make sure the TamperMonkey loader exposes it (see README). ' +
+      'Falling back to window.fetch (CORS will likely block intranet URLs).'
+    );
+    return window.fetch(url, { method, body })
+      .then(async r => ({ status: r.status, text: await r.text(), headers: '' }));
   }
 
-  const gmXhr = (typeof GM !== 'undefined' && GM.xmlHttpRequest) ? GM.xmlHttpRequest.bind(GM) : GM_xmlhttpRequest;
+  // Build the final headers: defaults → caller overrides → Referer
+  const headers = {
+    ...GM_BROWSER_HEADERS,
+    ...extraHeaders,
+    // Derive Referer from the target URL's origin if not supplied
+    Referer: referer || (() => {
+      try { return new URL(url).origin + '/'; } catch { return url; }
+    })(),
+  };
 
   return new Promise((resolve, reject) => {
-    gmXhr({
+    bridge({
       method,
       url,
       headers,
-      data: body,
+      data:      body,
       timeout,
-      onload:   r  => resolve({ status: r.status, text: r.responseText, headers: r.responseHeaders }),
-      onerror:  e  => reject(new Error(`gmFetch network error: ${JSON.stringify(e)}`)),
+      onload:    r  => resolve({ status: r.status, text: r.responseText, headers: r.responseHeaders }),
+      onerror:   e  => reject(new Error(`gmFetch network error for ${url}: ${JSON.stringify(e)}`)),
       ontimeout: () => reject(new Error(`gmFetch timed out after ${timeout}ms: ${url}`)),
     });
   });

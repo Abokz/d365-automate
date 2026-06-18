@@ -157,21 +157,41 @@
       clientY: rect.top + rect.height / 2
     }));
   }
-  function gmFetch(url, { method = "GET", headers = {}, body = null, timeout = 18e4 } = {}) {
-    if (typeof GM_xmlhttpRequest === "undefined" && typeof GM === "undefined") {
-      _log.warn("GM_xmlhttpRequest not available \u2014 falling back to window.fetch (CORS may block)");
-      return window.fetch(url, { method, headers, body }).then(async (r) => ({ status: r.status, text: await r.text(), headers: {} }));
+  function gmFetch(url, {
+    method = "GET",
+    extraHeaders = {},
+    body = null,
+    referer = null,
+    timeout = 18e4
+  } = {}) {
+    const bridge = window.gmXmlHttpRequest;
+    if (typeof bridge !== "function") {
+      _log.warn(
+        "window.gmXmlHttpRequest not found \u2014 make sure the TamperMonkey loader exposes it (see README). Falling back to window.fetch (CORS will likely block intranet URLs)."
+      );
+      return window.fetch(url, { method, body }).then(async (r) => ({ status: r.status, text: await r.text(), headers: "" }));
     }
-    const gmXhr = typeof GM !== "undefined" && GM.xmlHttpRequest ? GM.xmlHttpRequest.bind(GM) : GM_xmlhttpRequest;
+    const headers = {
+      ...GM_BROWSER_HEADERS,
+      ...extraHeaders,
+      // Derive Referer from the target URL's origin if not supplied
+      Referer: referer || (() => {
+        try {
+          return new URL(url).origin + "/";
+        } catch {
+          return url;
+        }
+      })()
+    };
     return new Promise((resolve, reject) => {
-      gmXhr({
+      bridge({
         method,
         url,
         headers,
         data: body,
         timeout,
         onload: (r) => resolve({ status: r.status, text: r.responseText, headers: r.responseHeaders }),
-        onerror: (e) => reject(new Error(`gmFetch network error: ${JSON.stringify(e)}`)),
+        onerror: (e) => reject(new Error(`gmFetch network error for ${url}: ${JSON.stringify(e)}`)),
         ontimeout: () => reject(new Error(`gmFetch timed out after ${timeout}ms: ${url}`))
       });
     });
@@ -239,7 +259,7 @@
   function normalizeId(val) {
     return String(val).trim().replace(/^'/, "").trim().toUpperCase();
   }
-  var _log;
+  var _log, GM_BROWSER_HEADERS;
   var init_core = __esm({
     "src/core.js"() {
       _log = {
@@ -247,6 +267,19 @@
         warn: (...a) => console.warn("%c[D365]", "color:#ffb74d;font-weight:bold", ...a),
         error: (...a) => console.error("%c[D365]", "color:#ef5350;font-weight:bold", ...a),
         ok: (...a) => console.log("%c[D365]", "color:#81c784;font-weight:bold", ...a)
+      };
+      GM_BROWSER_HEADERS = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Connection": "keep-alive",
+        "Cache-Control": "max-age=0",
+        "Upgrade-Insecure-Requests": "1",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1"
       };
     }
   });
@@ -444,13 +477,16 @@
     return { promise, stop };
   }
   function downloadBlob(url) {
-    if (typeof GM_xmlhttpRequest !== "undefined" || typeof GM !== "undefined" && GM.xmlHttpRequest) {
-      const gmXhr = typeof GM !== "undefined" && GM.xmlHttpRequest ? GM.xmlHttpRequest.bind(GM) : GM_xmlhttpRequest;
+    const bridge = window.gmXmlHttpRequest;
+    if (typeof bridge === "function") {
       return new Promise((resolve, reject) => {
-        gmXhr({
+        bridge({
           method: "GET",
           url,
           responseType: "arraybuffer",
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0"
+          },
           timeout: 12e4,
           onload: (r) => resolve(r.response),
           onerror: (e) => reject(new Error(`downloadBlob failed: ${JSON.stringify(e)}`)),
@@ -458,6 +494,7 @@
         });
       });
     }
+    _log.warn("downloadBlob: window.gmXmlHttpRequest not found \u2014 falling back to window.fetch (may fail on CORS)");
     return fetch(url).then((r) => r.arrayBuffer());
   }
   var _xlsxReady = null;

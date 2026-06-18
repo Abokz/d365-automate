@@ -341,25 +341,35 @@ function createBlobInterceptor() {
 
 /**
  * Download an Azure blob URL and return its contents as an ArrayBuffer.
- * Uses GM_xmlhttpRequest so the browser's same-origin policy doesn't block it.
+ * Uses window.gmXmlHttpRequest (bridged from TamperMonkey) so the
+ * browser's same-origin policy doesn't block the cross-origin blob URL.
  *
- * Falls back to window.fetch (may fail on CORS-restricted blobs).
+ * Falls back to window.fetch only if the bridge is absent.
  */
 function downloadBlob(url) {
-  if (typeof GM_xmlhttpRequest !== 'undefined' || (typeof GM !== 'undefined' && GM.xmlHttpRequest)) {
-    const gmXhr = (typeof GM !== 'undefined' && GM.xmlHttpRequest) ? GM.xmlHttpRequest.bind(GM) : GM_xmlhttpRequest;
+  const bridge = window.gmXmlHttpRequest;
+
+  if (typeof bridge === 'function') {
     return new Promise((resolve, reject) => {
-      gmXhr({
+      bridge({
         method:       'GET',
         url,
         responseType: 'arraybuffer',
-        timeout:      120_000,
-        onload:  r => resolve(r.response),
-        onerror: e => reject(new Error(`downloadBlob failed: ${JSON.stringify(e)}`)),
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' +
+            'AppleWebKit/537.36 (KHTML, like Gecko) ' +
+            'Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0',
+        },
+        timeout:   120_000,
+        onload:    r  => resolve(r.response),
+        onerror:   e  => reject(new Error(`downloadBlob failed: ${JSON.stringify(e)}`)),
         ontimeout: () => reject(new Error('downloadBlob timed out')),
       });
     });
   }
+
+  _log.warn('downloadBlob: window.gmXmlHttpRequest not found — falling back to window.fetch (may fail on CORS)');
   return fetch(url).then(r => r.arrayBuffer());
 }
 

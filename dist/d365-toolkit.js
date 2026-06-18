@@ -415,31 +415,18 @@
     const searchInput = await waitFor(
       () => {
         const el = document.querySelector("#SysCompanyChooser_2_DataArea_id_input");
-        return el && isVisible(el) ? el : null;
+        return el && el.offsetParent !== null ? el : null;
       },
       { timeout: 1e4, label: "company chooser input" }
     );
     _log.ok(`Found input: id=${searchInput.id}`);
     await fill(searchInput, entityCode);
-    await sleep(300);
-    const lookupBtn = document.querySelector(".lookupButton");
+    await sleep(400);
+    _log.ok(`Filled: "${searchInput.value}"`);
+    const lookupBtn = document.querySelector("#SysCompanyChooser_2_DataArea_id .lookupButton");
     if (!lookupBtn) throw new Error("switchEntity: lookup button not found");
     simulateClick(lookupBtn);
-    _log.ok("Clicked lookup button \u2014 waiting for Company textbox...");
-    const matchingCell = await waitFor(
-      () => {
-        const cells = document.querySelectorAll('input[role="textbox"][aria-label="Company"]');
-        for (const cell of cells) {
-          if (cell.title === entityCode || cell.value === entityCode) {
-            return isVisible(cell) ? cell : null;
-          }
-        }
-        return null;
-      },
-      { timeout: 8e3, label: `Company textbox for "${entityCode}"` }
-    );
-    _log.ok(`Found: id=${matchingCell.id}, value=${matchingCell.value}`);
-    simulateClick(matchingCell);
+    _log.ok("Clicked lookup button \u2014 waiting for page to refresh...");
     await waitReady();
     const newCode = document.querySelector("#CompanyButton_button")?.textContent.trim();
     if (newCode !== entityCode) {

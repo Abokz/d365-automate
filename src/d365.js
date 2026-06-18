@@ -263,45 +263,27 @@ async function switchEntity(entityCode) {
   const searchInput = await waitFor(
     () => {
       const el = document.querySelector('#SysCompanyChooser_2_DataArea_id_input');
-      return el && isVisible(el) ? el : null;
+      return el && el.offsetParent !== null ? el : null;
     },
     { timeout: 10_000, label: 'company chooser input' }
   );
-
   _log.ok(`Found input: id=${searchInput.id}`);
 
   // 3. Fill the entity code
   await fill(searchInput, entityCode);
-  await sleep(300);
+  await sleep(400);
+  _log.ok(`Filled: "${searchInput.value}"`);
 
-  // 4. Click the lookup button to open the dropdown
-  const lookupBtn = document.querySelector('.lookupButton');
+  // 4. Click the lookup button — commits the value and triggers the switch
+  const lookupBtn = document.querySelector('#SysCompanyChooser_2_DataArea_id .lookupButton');
   if (!lookupBtn) throw new Error('switchEntity: lookup button not found');
   simulateClick(lookupBtn);
+  _log.ok('Clicked lookup button — waiting for page to refresh...');
 
-  _log.ok('Clicked lookup button — waiting for Company textbox...');
-
-  // 5. Wait for the Company textbox and simulateClick it — exactly like Playwright
-  const matchingCell = await waitFor(
-    () => {
-      const cells = document.querySelectorAll('input[role="textbox"][aria-label="Company"]');
-      for (const cell of cells) {
-        if (cell.title === entityCode || cell.value === entityCode) {
-          return isVisible(cell) ? cell : null;
-        }
-      }
-      return null;
-    },
-    { timeout: 8_000, label: `Company textbox for "${entityCode}"` }
-  );
-
-  _log.ok(`Found: id=${matchingCell.id}, value=${matchingCell.value}`);
-  simulateClick(matchingCell);
-
-  // 6. Wait for D365 to finish refreshing
+  // 5. Wait for D365 to finish refreshing
   await waitReady();
 
-  // 7. Confirm
+  // 6. Confirm
   const newCode = document.querySelector('#CompanyButton_button')?.textContent.trim();
   if (newCode !== entityCode) {
     _log.warn(`switchEntity: button shows "${newCode}" instead of "${entityCode}" — continuing anyway`);

@@ -382,6 +382,25 @@
     }
     return findByLabel(label) || findByText(label);
   }
+  function pressKey(el, key, code = key) {
+    el.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key,
+        code,
+        bubbles: true
+      })
+    );
+    el.dispatchEvent(
+      new KeyboardEvent("keyup", {
+        key,
+        code,
+        bubbles: true
+      })
+    );
+  }
+  function pressEnter(el) {
+    pressKey(el, "Enter", "Enter");
+  }
   async function switchEntity(entityCode) {
     const currentBtn = document.querySelector("#CompanyButton_button");
     if (!currentBtn) throw new Error("switchEntity: company button not found");
@@ -400,21 +419,7 @@
     );
     await fill(searchInput, entityCode);
     await sleep(600);
-    const listItem = await waitFor(
-      () => {
-        const items = document.querySelectorAll(
-          '[role="option"], [role="listitem"], [role="row"], .navigationBar-companyListItem'
-        );
-        for (const item of items) {
-          if (isVisible(item) && item.textContent.trim().startsWith(entityCode)) {
-            return item;
-          }
-        }
-        return null;
-      },
-      { timeout: 8e3, label: `company list item for "${entityCode}"` }
-    );
-    simulateClick(listItem);
+    pressEnter(searchInput);
     await waitReady();
     const newCode = document.querySelector("#CompanyButton_button")?.textContent.trim();
     if (newCode !== entityCode) {

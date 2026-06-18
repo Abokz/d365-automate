@@ -185,6 +185,32 @@ function findButton(label, idSuffix = null) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Key Events
+// ─────────────────────────────────────────────────────────────────────────────
+
+function pressKey(el, key, code = key) {
+  el.dispatchEvent(
+    new KeyboardEvent('keydown', {
+      key,
+      code,
+      bubbles: true,
+    })
+  );
+
+  el.dispatchEvent(
+    new KeyboardEvent('keyup', {
+      key,
+      code,
+      bubbles: true,
+    })
+  );
+}
+
+function pressEnter(el) {
+  pressKey(el, "Enter", "Enter");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Entity / company switching
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -228,24 +254,8 @@ async function switchEntity(entityCode) {
   await fill(searchInput, entityCode);
   await sleep(600); // let the list filter
 
-  // 4. Click the matching list item
-  const listItem = await waitFor(
-    () => {
-      // Look for an option/row whose text exactly matches the entity code
-      const items = document.querySelectorAll(
-        '[role="option"], [role="listitem"], [role="row"], .navigationBar-companyListItem'
-      );
-      for (const item of items) {
-        if (isVisible(item) && item.textContent.trim().startsWith(entityCode)) {
-          return item;
-        }
-      }
-      return null;
-    },
-    { timeout: 8_000, label: `company list item for "${entityCode}"` }
-  );
-
-  simulateClick(listItem);
+  // 4. Press Enter
+  pressEnter(searchInput);
 
   // 5. Wait for D365 to finish refreshing the page data
   await waitReady();

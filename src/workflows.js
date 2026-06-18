@@ -239,7 +239,7 @@ const BatchJobMonitor = (() => {
       }
 
       report.push(entry);
-      await selectRow(grid, rowEl, idx); // Select again to deselect
+      await goToRow(grid, idx); // Select again to deselect
       idx++;
       await sleep(d365Config.stepDelayMs);
     }

@@ -749,7 +749,7 @@
           _log.error(`  ${job.jobId}: ${entry.note}`);
         }
         report.push(entry);
-        await selectRow(grid, rowEl, idx);
+        await goToRow(grid, idx);
         idx++;
         await sleep(d365Config.stepDelayMs);
       }

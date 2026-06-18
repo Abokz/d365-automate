@@ -131,11 +131,11 @@ async function simulateClickRow(el) {
   const opts = { bubbles: true, cancelable: true, view: window };
   el.dispatchEvent(new MouseEvent('mouseover',   { ...opts, bubbles: true }));
   el.dispatchEvent(new MouseEvent('mouseenter',  { ...opts, bubbles: false }));
-  await sleep(50);
+  await sleep(1000);
   el.dispatchEvent(new MouseEvent('mousedown',   opts));
   el.dispatchEvent(new MouseEvent('mouseup',     opts));
   el.dispatchEvent(new MouseEvent('click',       opts));
-  await sleep(50);
+  await sleep(1000);
   el.dispatchEvent(new MouseEvent('dblclick',    opts));
 }
 

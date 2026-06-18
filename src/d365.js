@@ -280,37 +280,54 @@ async function switchEntity(entityCode) {
   simulateClick(lookupBtn);
 
   _log.ok('Clicked lookup button — waiting for grid row...');
+  await sleep(900);
 
-  // 5. Wait for the readonly "Company" textbox in the grid and click it
-  //    Playwright: page.get_by_role("textbox", name="Company", exact=True).click()
-  const matchingCell = await waitFor(
-    () => {
-      const cells = document.querySelectorAll('input[role="textbox"][aria-label="Company"][readonly]');
-      for (const cell of cells) {
-        if (cell.title === entityCode || cell.value === entityCode) {
-          return isVisible(cell) ? cell : null;
+  // 5. Retry clicking the matching row up to 5 times
+  let switched = false;
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    const matchingCell = await waitFor(
+      () => {
+        const cells = document.querySelectorAll('input[role="textbox"][aria-label="Company"][readonly]');
+        for (const cell of cells) {
+          if (cell.title === entityCode || cell.value === entityCode) {
+            return isVisible(cell) ? cell : null;
+          }
         }
-      }
-      return null;
-    },
-    { timeout: 8_000, label: `grid textbox for entity "${entityCode}"` }
-  );
+        return null;
+      },
+      { timeout: 5_000, label: `grid textbox for entity "${entityCode}" (attempt ${attempt})` }
+    );
 
-  _log.ok(`Found matching cell — clicking...`);
+    const row = matchingCell.closest('[role="row"]');
+    if (!row) {
+      _log.warn(`Attempt ${attempt}: could not find parent row — retrying...`);
+      await sleep(300);
+      continue;
+    }
 
-  const row = matchingCell.closest('[role="row"]');
-  if (!row) throw new Error('switchEntity: could not find parent row');
+    _log.ok(`Attempt ${attempt}: clicking row id=${row.id}`);
+    await simulateClickRow(row);
+    await sleep(500);
 
-  _log.ok(`Row id: ${row.id}`);
-  simulateClick(row);
+    // Check if it worked
+    const newCode = document.querySelector('#CompanyButton_button')?.textContent.trim();
+    if (newCode === entityCode) {
+      switched = true;
+      break;
+    }
+    _log.warn(`Attempt ${attempt}: button still shows "${newCode}" — retrying...`);
+    await sleep(300);
+  }
 
-  // 6. Wait for D365 to finish refreshing
+  if (!switched) {
+    _log.warn(`switchEntity: could not confirm switch after 5 attempts — continuing anyway`);
+  }
+
   await waitReady();
 
-  // 7. Confirm
   const newCode = document.querySelector('#CompanyButton_button')?.textContent.trim();
   if (newCode !== entityCode) {
-    _log.warn(`switchEntity: button shows "${newCode}" instead of "${entityCode}" — continuing anyway`);
+    _log.warn(`switchEntity: button shows "${newCode}" instead of "${entityCode}"`);
   } else {
     _log.ok(`Switched to entity ${entityCode}`);
   }

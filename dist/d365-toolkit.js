@@ -104,11 +104,11 @@
     const opts = { bubbles: true, cancelable: true, view: window };
     el.dispatchEvent(new MouseEvent("mouseover", { ...opts, bubbles: true }));
     el.dispatchEvent(new MouseEvent("mouseenter", { ...opts, bubbles: false }));
-    await sleep(50);
+    await sleep(1e3);
     el.dispatchEvent(new MouseEvent("mousedown", opts));
     el.dispatchEvent(new MouseEvent("mouseup", opts));
     el.dispatchEvent(new MouseEvent("click", opts));
-    await sleep(50);
+    await sleep(1e3);
     el.dispatchEvent(new MouseEvent("dblclick", opts));
   }
   async function click(target, { timeout = 15e3, root = document } = {}) {
@@ -419,27 +419,45 @@
     if (!lookupBtn) throw new Error("switchEntity: lookup button not found");
     simulateClick(lookupBtn);
     _log.ok("Clicked lookup button \u2014 waiting for grid row...");
-    const matchingCell = await waitFor(
-      () => {
-        const cells = document.querySelectorAll('input[role="textbox"][aria-label="Company"][readonly]');
-        for (const cell of cells) {
-          if (cell.title === entityCode || cell.value === entityCode) {
-            return isVisible(cell) ? cell : null;
+    await sleep(900);
+    let switched = false;
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      const matchingCell = await waitFor(
+        () => {
+          const cells = document.querySelectorAll('input[role="textbox"][aria-label="Company"][readonly]');
+          for (const cell of cells) {
+            if (cell.title === entityCode || cell.value === entityCode) {
+              return isVisible(cell) ? cell : null;
+            }
           }
-        }
-        return null;
-      },
-      { timeout: 8e3, label: `grid textbox for entity "${entityCode}"` }
-    );
-    _log.ok(`Found matching cell \u2014 clicking...`);
-    const row = matchingCell.closest('[role="row"]');
-    if (!row) throw new Error("switchEntity: could not find parent row");
-    _log.ok(`Row id: ${row.id}`);
-    simulateClick(row);
+          return null;
+        },
+        { timeout: 5e3, label: `grid textbox for entity "${entityCode}" (attempt ${attempt})` }
+      );
+      const row = matchingCell.closest('[role="row"]');
+      if (!row) {
+        _log.warn(`Attempt ${attempt}: could not find parent row \u2014 retrying...`);
+        await sleep(300);
+        continue;
+      }
+      _log.ok(`Attempt ${attempt}: clicking row id=${row.id}`);
+      await simulateClickRow(row);
+      await sleep(500);
+      const newCode2 = document.querySelector("#CompanyButton_button")?.textContent.trim();
+      if (newCode2 === entityCode) {
+        switched = true;
+        break;
+      }
+      _log.warn(`Attempt ${attempt}: button still shows "${newCode2}" \u2014 retrying...`);
+      await sleep(300);
+    }
+    if (!switched) {
+      _log.warn(`switchEntity: could not confirm switch after 5 attempts \u2014 continuing anyway`);
+    }
     await waitReady();
     const newCode = document.querySelector("#CompanyButton_button")?.textContent.trim();
     if (newCode !== entityCode) {
-      _log.warn(`switchEntity: button shows "${newCode}" instead of "${entityCode}" \u2014 continuing anyway`);
+      _log.warn(`switchEntity: button shows "${newCode}" instead of "${entityCode}"`);
     } else {
       _log.ok(`Switched to entity ${entityCode}`);
     }

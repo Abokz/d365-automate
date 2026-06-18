@@ -94,7 +94,14 @@
   }
   function simulateClick(el) {
     if (!el) throw new Error("simulateClick: element is null");
-    const opts = { bubbles: true, cancelable: true, view: window };
+    const rect = el.getBoundingClientRect();
+    const opts = {
+      bubbles: true,
+      cancelable: true,
+      view: window,
+      clientX: rect.left + rect.width / 2,
+      clientY: rect.top + rect.height / 2
+    };
     el.dispatchEvent(new MouseEvent("mousedown", opts));
     el.dispatchEvent(new MouseEvent("mouseup", opts));
     el.dispatchEvent(new MouseEvent("click", opts));

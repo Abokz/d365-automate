@@ -246,82 +246,68 @@ function pressTab(el) {
  */
 
 async function switchEntity(entityCode) {
-  await (async function testSwitchEntity() {
-    function sleep(ms) {
-      return new Promise(r => setTimeout(r, ms));
-    }
+  const currentBtn = document.querySelector('#CompanyButton_button');
+  if (!currentBtn) throw new Error('switchEntity: company button not found');
 
-    function simulateClick_t(el) {
-      if (!el) throw new Error('simulateClick: element is null');
-      const rect = el.getBoundingClientRect();
-      const opts = {
-        bubbles: true, cancelable: true, view: window,
-        clientX: rect.left + rect.width / 2,
-        clientY: rect.top + rect.height / 2,
-      };
-      el.dispatchEvent(new MouseEvent('mousedown', opts));
-      el.dispatchEvent(new MouseEvent('mouseup',   opts));
-      el.dispatchEvent(new MouseEvent('click',     opts));
-    }
+  const currentCode = currentBtn.textContent.trim();
+  if (currentCode === entityCode) {
+    _log.info(`Already on entity ${entityCode} — skipping switch`);
+    return;
+  }
+  _log.info(`Switching entity: ${currentCode} → ${entityCode}`);
 
-    async function fill_t(el, value) {
-      el.focus();
-      el.value = '';
-      el.dispatchEvent(new Event('input', { bubbles: true }));
-      await sleep(50);
-      el.value = value;
-      el.dispatchEvent(new Event('input',  { bubbles: true }));
-      el.dispatchEvent(new Event('change', { bubbles: true }));
-    }
+  // 1. Open the picker
+  simulateClick(currentBtn);
 
-    async function waitFor_t(fn, { timeout = 8000, interval = 200, label = '' } = {}) {
-      const deadline = Date.now() + timeout;
-      while (Date.now() < deadline) {
-        const result = fn();
-        if (result) return result;
-        await sleep(interval);
+  // 2. Wait for the combobox input to become visible
+  const searchInput = await waitFor(
+    () => {
+      const el = document.querySelector('#SysCompanyChooser_2_DataArea_id_input');
+      return el && isVisible(el) ? el : null;
+    },
+    { timeout: 10_000, label: 'company chooser input' }
+  );
+
+  _log.ok(`Found input: id=${searchInput.id}`);
+
+  // 3. Fill the entity code
+  await fill(searchInput, entityCode);
+  await sleep(300);
+
+  // 4. Click the lookup button to open the dropdown
+  const lookupBtn = document.querySelector('.lookupButton');
+  if (!lookupBtn) throw new Error('switchEntity: lookup button not found');
+  simulateClick(lookupBtn);
+
+  _log.ok('Clicked lookup button — waiting for Company textbox...');
+
+  // 5. Wait for the Company textbox and simulateClick it — exactly like Playwright
+  const matchingCell = await waitFor(
+    () => {
+      const cells = document.querySelectorAll('input[role="textbox"][aria-label="Company"]');
+      for (const cell of cells) {
+        if (cell.title === entityCode || cell.value === entityCode) {
+          return isVisible(cell) ? cell : null;
+        }
       }
-      throw new Error(`waitFor timeout: ${label}`);
-    }
+      return null;
+    },
+    { timeout: 8_000, label: `Company textbox for "${entityCode}"` }
+  );
 
-    async function waitReady_t() {
-      await sleep(5000);
-    }
+  _log.ok(`Found: id=${matchingCell.id}, value=${matchingCell.value}`);
+  simulateClick(matchingCell);
 
-    console.log(`Switching to: ${entityCode}`);
+  // 6. Wait for D365 to finish refreshing
+  await waitReady();
 
-    const companyBtn = document.querySelector('#CompanyButton_button');
-    if (!companyBtn) throw new Error('Company button not found');
-    console.log(`Current: ${companyBtn.textContent.trim()}`);
-    simulateClick_t(companyBtn);
-
-    const searchInput = await waitFor_t(
-      () => {
-        const el = document.querySelector('#SysCompanyChooser_2_DataArea_id_input');
-        return el && el.offsetParent !== null ? el : null;
-      },
-      { timeout: 10_000, label: 'company chooser input' }
-    );
-    console.log(`✓ Found input`);
-
-    await fill_t(searchInput, entityCode);
-    await sleep(400);
-    console.log(`✓ Filled: "${searchInput.value}"`);
-
-    const lookupBtn = document.querySelector('#SysCompanyChooser_2_DataArea_id .lookupButton');
-    if (!lookupBtn) throw new Error('Lookup button not found');
-    simulateClick_t(lookupBtn);
-    console.log('✓ Clicked lookup button — waiting...');
-
-    await waitReady_t();
-
-    const newCode = document.querySelector('#CompanyButton_button')?.textContent.trim();
-    if (newCode === entityCode) {
-      console.log(`✓✓ SUCCESS — switched to ${newCode}`);
-    } else {
-      console.warn(`✗ Button shows "${newCode}" instead of "${entityCode}"`);
-    }
-  })();
+  // 7. Confirm
+  const newCode = document.querySelector('#CompanyButton_button')?.textContent.trim();
+  if (newCode !== entityCode) {
+    _log.warn(`switchEntity: button shows "${newCode}" instead of "${entityCode}" — continuing anyway`);
+  } else {
+    _log.ok(`Switched to entity ${entityCode}`);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -418,46 +418,25 @@
     const lookupBtn = document.querySelector(".lookupButton");
     if (!lookupBtn) throw new Error("switchEntity: lookup button not found");
     simulateClick(lookupBtn);
-    _log.ok("Clicked lookup button \u2014 waiting for grid row...");
-    await sleep(900);
-    let switched = false;
-    for (let attempt = 1; attempt <= 5; attempt++) {
-      const matchingCell = await waitFor(
-        () => {
-          const cells = document.querySelectorAll('input[role="textbox"][aria-label="Company"][readonly]');
-          for (const cell of cells) {
-            if (cell.title === entityCode || cell.value === entityCode) {
-              return isVisible(cell) ? cell : null;
-            }
+    _log.ok("Clicked lookup button \u2014 waiting for Company textbox...");
+    const matchingCell = await waitFor(
+      () => {
+        const cells = document.querySelectorAll('input[role="textbox"][aria-label="Company"]');
+        for (const cell of cells) {
+          if (cell.title === entityCode || cell.value === entityCode) {
+            return isVisible(cell) ? cell : null;
           }
-          return null;
-        },
-        { timeout: 5e3, label: `grid textbox for entity "${entityCode}" (attempt ${attempt})` }
-      );
-      const row = matchingCell.closest('[role="row"]');
-      if (!row) {
-        _log.warn(`Attempt ${attempt}: could not find parent row \u2014 retrying...`);
-        await sleep(300);
-        continue;
-      }
-      _log.ok(`Attempt ${attempt}: clicking row id=${row.id}`);
-      await simulateClickRow(row);
-      await sleep(500);
-      const newCode2 = document.querySelector("#CompanyButton_button")?.textContent.trim();
-      if (newCode2 === entityCode) {
-        switched = true;
-        break;
-      }
-      _log.warn(`Attempt ${attempt}: button still shows "${newCode2}" \u2014 retrying...`);
-      await sleep(300);
-    }
-    if (!switched) {
-      _log.warn(`switchEntity: could not confirm switch after 5 attempts \u2014 continuing anyway`);
-    }
+        }
+        return null;
+      },
+      { timeout: 8e3, label: `Company textbox for "${entityCode}"` }
+    );
+    _log.ok(`Found: id=${matchingCell.id}, value=${matchingCell.value}`);
+    simulateClick(matchingCell);
     await waitReady();
     const newCode = document.querySelector("#CompanyButton_button")?.textContent.trim();
     if (newCode !== entityCode) {
-      _log.warn(`switchEntity: button shows "${newCode}" instead of "${entityCode}"`);
+      _log.warn(`switchEntity: button shows "${newCode}" instead of "${entityCode}" \u2014 continuing anyway`);
     } else {
       _log.ok(`Switched to entity ${entityCode}`);
     }

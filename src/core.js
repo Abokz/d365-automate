@@ -19,7 +19,7 @@ const _log = {
   ok:    (...a) => console.log( '%c[D365]', 'color:#81c784;font-weight:bold', ...a),
 };
 
-console.log('TOOLKIT BUILD 2026-06-18-2');
+console.log('TOOLKIT BUILD 2026-06-18-3');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // sleep / waitFor

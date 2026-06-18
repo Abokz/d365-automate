@@ -402,26 +402,24 @@
     _log.ok(`Found input: id=${searchInput.id}`);
     await fill(searchInput, entityCode);
     await sleep(300);
-    _log.ok(`After fill: value="${searchInput.value}"`);
-    const lookupBtn = document.querySelector("#SysCompanyChooser_2_DataArea_id .lookupButton");
+    const lookupBtn = document.querySelector(".lookupButton");
     if (!lookupBtn) throw new Error("switchEntity: lookup button not found");
     simulateClick(lookupBtn);
-    _log.ok("Clicked lookup button \u2014 waiting for dropdown grid...");
-    const matchingRow = await waitFor(
+    _log.ok("Clicked lookup button \u2014 waiting for grid row...");
+    const matchingCell = await waitFor(
       () => {
-        const cells = document.querySelectorAll('[data-dyn-controlname="DataArea_id"] input[type="text"]');
+        const cells = document.querySelectorAll('input[role="textbox"][aria-label="Company"][readonly]');
         for (const cell of cells) {
           if (cell.title === entityCode || cell.value === entityCode) {
-            const row = cell.closest('[role="row"]');
-            return row && isVisible(row) ? row : null;
+            return isVisible(cell) ? cell : null;
           }
         }
         return null;
       },
-      { timeout: 8e3, label: `grid row for entity "${entityCode}"` }
+      { timeout: 8e3, label: `grid textbox for entity "${entityCode}"` }
     );
-    _log.ok(`Found matching row \u2014 clicking...`);
-    simulateClick(matchingRow);
+    _log.ok(`Found matching cell \u2014 clicking...`);
+    simulateClick(matchingCell);
     await waitReady();
     const newCode = document.querySelector("#CompanyButton_button")?.textContent.trim();
     if (newCode !== entityCode) {

@@ -259,7 +259,7 @@ async function switchEntity(entityCode) {
   // 1. Open the picker
   simulateClick(currentBtn);
 
-  // 2. Wait for the input to become visible
+  // 2. Wait for the combobox input to become visible
   const searchInput = await waitFor(
     () => {
       const el = document.querySelector('#SysCompanyChooser_2_DataArea_id_input');
@@ -274,33 +274,30 @@ async function switchEntity(entityCode) {
   await fill(searchInput, entityCode);
   await sleep(300);
 
-  _log.ok(`After fill: value="${searchInput.value}"`);
-
-  // 4. Click the lookup button (the dropdown trigger inside the same container)
-  const lookupBtn = document.querySelector('#SysCompanyChooser_2_DataArea_id .lookupButton');
+  // 4. Click the FIRST lookupButton (matches Playwright's .lookupButton >> first)
+  const lookupBtn = document.querySelector('.lookupButton');
   if (!lookupBtn) throw new Error('switchEntity: lookup button not found');
   simulateClick(lookupBtn);
 
-  _log.ok('Clicked lookup button — waiting for dropdown grid...');
+  _log.ok('Clicked lookup button — waiting for grid row...');
 
-  // 5. Wait for a grid row whose Company cell matches entityCode
-  const matchingRow = await waitFor(
+  // 5. Wait for the readonly "Company" textbox in the grid and click it
+  //    Playwright: page.get_by_role("textbox", name="Company", exact=True).click()
+  const matchingCell = await waitFor(
     () => {
-      const cells = document.querySelectorAll('[data-dyn-controlname="DataArea_id"] input[type="text"]');
+      const cells = document.querySelectorAll('input[role="textbox"][aria-label="Company"][readonly]');
       for (const cell of cells) {
         if (cell.title === entityCode || cell.value === entityCode) {
-          // Walk up to the row element
-          const row = cell.closest('[role="row"]');
-          return row && isVisible(row) ? row : null;
+          return isVisible(cell) ? cell : null;
         }
       }
       return null;
     },
-    { timeout: 8_000, label: `grid row for entity "${entityCode}"` }
+    { timeout: 8_000, label: `grid textbox for entity "${entityCode}"` }
   );
 
-  _log.ok(`Found matching row — clicking...`);
-  simulateClick(matchingRow);
+  _log.ok(`Found matching cell — clicking...`);
+  simulateClick(matchingCell);
 
   // 6. Wait for D365 to finish refreshing
   await waitReady();

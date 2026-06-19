@@ -6,6 +6,7 @@
 //   await EntitySwitchTest.runSingle('0051')
 //   EntitySwitchTest.setVerbose(true)   // extra DOM diagnostics
 // ─────────────────────────────────────────────────────────────────────────────
+import { switchEntity } from './d365'
 
 export const EntitySwitchTest = (() => {
 

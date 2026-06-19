@@ -1,5 +1,5 @@
 {
-  "version": "1.0.4",
+  "version": "1.0.5",
   "scripts": {
     "build": "esbuild src/index.js --bundle --format=iife --outfile=dist/d365-toolkit.js",
     "watch": "esbuild src/index.js --bundle --format=iife --outfile=dist/d365-toolkit.js --watch"

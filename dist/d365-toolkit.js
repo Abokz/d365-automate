@@ -1,4 +1,4 @@
-/* D365 Toolkit — built 2026-06-19T06:12:54.671Z */
+/* D365 Toolkit — built 2026-06-19T06:15:29.478Z */
 var D365ToolkitBundle = (() => {
   var __defProp = Object.defineProperty;
   var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
@@ -503,7 +503,7 @@ var D365ToolkitBundle = (() => {
     }
     return findByLabel(label) || findByText(label);
   }
-  async function switchEntity2(entityCode) {
+  async function switchEntity(entityCode) {
     const currentBtn = document.querySelector("#CompanyButton_button");
     if (!currentBtn) throw new Error("switchEntity: company button not found");
     const currentCode = currentBtn.textContent.trim();
@@ -580,7 +580,7 @@ var D365ToolkitBundle = (() => {
     }
   }
   async function navigate(module, entity = null) {
-    if (entity) await switchEntity2(entity);
+    if (entity) await switchEntity(entity);
     const base = `${location.origin}/`;
     const cmp = document.querySelector("#CompanyButton_button")?.textContent.trim() || "";
     location.href = `${base}?cmp=${cmp}&mi=${module}`;
@@ -1062,7 +1062,7 @@ var D365ToolkitBundle = (() => {
       for (const entity of entities) {
         _log.info(`
 \u2500\u2500 Entity: ${entity} \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500`);
-        await switchEntity2(entity);
+        await switchEntity(entity);
         await waitReady();
         const d365Ids = await fetchD365Invoices(entity, fromDt, toDt);
         if (!d365Ids.size) {
@@ -1750,7 +1750,7 @@ var D365ToolkitBundle = (() => {
   })();
 
   // package.json
-  var version = "1.0.4";
+  var version = "1.0.5";
 
   // src/index.js
   var D365Toolkit = {
@@ -1789,7 +1789,7 @@ var D365ToolkitBundle = (() => {
     selectRow,
     goToRow,
     findButton,
-    switchEntity: switchEntity2,
+    switchEntity,
     navigate,
     createBlobInterceptor,
     downloadBlob,

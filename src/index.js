@@ -33,8 +33,7 @@ import {
 import { workflows, BatchJobMonitor, InvoiceCrossCheck } from './workflows.js';
 import { initUI, destroyUI, panelLog, setStatus, setProgress } from './ui.js';
 import { EntitySwitchTest } from './test.js';
-
-const version = __BUILD_VERSION__;
+import { version } from '../package.json'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Assemble the public API

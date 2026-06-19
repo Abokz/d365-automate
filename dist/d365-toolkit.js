@@ -1,6 +1,9 @@
-(() => {
+/* D365 Toolkit — built 2026-06-19T06:12:54.671Z */
+var D365ToolkitBundle = (() => {
   var __defProp = Object.defineProperty;
+  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
   var __getOwnPropNames = Object.getOwnPropertyNames;
+  var __hasOwnProp = Object.prototype.hasOwnProperty;
   var __esm = (fn, res, err) => function __init() {
     if (err) throw err[0];
     try {
@@ -13,6 +16,15 @@
     for (var name in all)
       __defProp(target, name, { get: all[name], enumerable: true });
   };
+  var __copyProps = (to, from, except, desc) => {
+    if (from && typeof from === "object" || typeof from === "function") {
+      for (let key of __getOwnPropNames(from))
+        if (!__hasOwnProp.call(to, key) && key !== except)
+          __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+    }
+    return to;
+  };
+  var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
   // src/core.js
   var core_exports = {};
@@ -390,6 +402,10 @@
   });
 
   // src/index.js
+  var index_exports = {};
+  __export(index_exports, {
+    default: () => index_default
+  });
   init_core();
 
   // src/d365.js
@@ -1733,8 +1749,10 @@
     };
   })();
 
+  // package.json
+  var version = "1.0.4";
+
   // src/index.js
-  var version = __BUILD_VERSION__;
   var D365Toolkit = {
     // ── config (callers can mutate these) ────────────────────────────────────
     d365Config,
@@ -1809,4 +1827,5 @@
   };
   window.D365Toolkit = D365Toolkit;
   var index_default = D365Toolkit;
+  return __toCommonJS(index_exports);
 })();

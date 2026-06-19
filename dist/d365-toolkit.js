@@ -1,4 +1,4 @@
-/* D365 Toolkit — built 2026-06-19T06:43:34.821Z */
+/* D365 Toolkit — built 2026-06-19T06:47:11.473Z */
 var D365ToolkitBundle = (() => {
   var __defProp = Object.defineProperty;
   var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
@@ -988,21 +988,15 @@ var D365ToolkitBundle = (() => {
         const applyBtn = findButton("Apply");
         if (applyBtn) {
           simulateClick(applyBtn);
-          const oldGrid = document.querySelector('[role="grid"]');
-          if (oldGrid) {
-            await waitFor(
-              () => !document.body.contains(oldGrid),
-              { timeout: 1e4, interval: 100, label: "old grid to detach after Apply" }
-            ).catch(() => {
-              _log.warn("Old grid did not detach \u2014 D365 may have done an in-place refresh");
-            });
-          }
           await waitFor(
-            () => {
-              const g = document.querySelector('[role="grid"]');
-              return g && g !== oldGrid && g.querySelector('[role="row"]') ? g : null;
-            },
-            { timeout: 15e3, interval: 150, label: "fresh grid after Apply" }
+            () => document.querySelectorAll('[role="grid"] [role="row"]').length === 0,
+            { timeout: 5e3, interval: 100, label: "grid rows to clear after Apply" }
+          ).catch(() => {
+            _log.warn("Rows did not fully clear \u2014 D365 may have responded very fast");
+          });
+          await waitFor(
+            () => document.querySelectorAll('[role="grid"] [role="row"]').length > 0,
+            { timeout: 15e3, interval: 150, label: "grid rows to repopulate after Apply" }
           );
           await sleep(300);
         }
@@ -1770,7 +1764,7 @@ var D365ToolkitBundle = (() => {
   })();
 
   // package.json
-  var version = "1.0.6";
+  var version = "1.0.7";
 
   // src/index.js
   var D365Toolkit = {

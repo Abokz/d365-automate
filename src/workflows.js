@@ -457,34 +457,25 @@ const InvoiceCrossCheck = (() => {
       if (fromInput) await fill(fromInput, fmtD365(fromDt));
       if (toInput)   await fill(toInput,   fmtD365(toDt));
 
-
       // Apply
       const applyBtn = findButton('Apply');
       if (applyBtn) {
         simulateClick(applyBtn);
 
-        // Wait for the grid to go stale (detach) then come back
-        // D365 replaces the grid DOM on filter apply — no "Please wait" overlay
-        const oldGrid = document.querySelector('[role="grid"]');
-        if (oldGrid) {
-          // Wait for old grid to detach
-          await waitFor(
-            () => !document.body.contains(oldGrid),
-            { timeout: 10_000, interval: 100, label: 'old grid to detach after Apply' }
-          ).catch(() => {
-            // Some D365 versions do an in-place refresh — don't hard fail
-            _log.warn('Old grid did not detach — D365 may have done an in-place refresh');
-          });
-        }
-
-        // Wait for a fresh grid to appear and be populated
+        // In-place refresh: row count drops to 0 then comes back
+        // First wait for rows to clear (grid is loading)
         await waitFor(
-          () => {
-            const g = document.querySelector('[role="grid"]');
-            // Make sure it's a new node (or at least has rows)
-            return g && g !== oldGrid && g.querySelector('[role="row"]') ? g : null;
-          },
-          { timeout: 15_000, interval: 150, label: 'fresh grid after Apply' }
+          () => document.querySelectorAll('[role="grid"] [role="row"]').length === 0,
+          { timeout: 5_000, interval: 100, label: 'grid rows to clear after Apply' }
+        ).catch(() => {
+          // Rows may not fully clear on fast responses — that's fine, continue
+          _log.warn('Rows did not fully clear — D365 may have responded very fast');
+        });
+
+        // Then wait for rows to come back (filter results loaded)
+        await waitFor(
+          () => document.querySelectorAll('[role="grid"] [role="row"]').length > 0,
+          { timeout: 15_000, interval: 150, label: 'grid rows to repopulate after Apply' }
         );
 
         await sleep(300); // let virtualised rows finish rendering

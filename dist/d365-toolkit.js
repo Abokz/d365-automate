@@ -40,6 +40,7 @@
     sleep: () => sleep,
     waitFor: () => waitFor,
     waitForD365Idle: () => waitForD365Idle,
+    waitForElement: () => waitForElement,
     waitForGone: () => waitForGone
   });
   function sleep(ms) {
@@ -79,6 +80,15 @@
         label: "D365 processing overlay to disappear"
       }
     );
+  }
+  async function waitForElement(selector, timeout = 1e4) {
+    const start = Date.now();
+    while (Date.now() - start < timeout) {
+      const el = document.querySelector(selector);
+      if (el) return el;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    throw new Error(`Element not found: ${selector}`);
   }
   function isVisible(el) {
     if (!el) return false;
@@ -339,7 +349,6 @@
         error: (...a) => console.error("%c[D365]", "color:#ef5350;font-weight:bold", ...a),
         ok: (...a) => console.log("%c[D365]", "color:#81c784;font-weight:bold", ...a)
       };
-      console.log("TOOLKIT BUILD 2026-06-18-3");
       GM_BROWSER_HEADERS = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
@@ -900,8 +909,14 @@
           simulateClick(dateHeader);
           await sleep(400);
         }
-        const fromInput = document.querySelector('input[name$="_createdDateTime_Input_0"]') || document.querySelector('input[aria-label*="From" i][aria-label*="date" i]');
-        const toInput = document.querySelector('input[name$="_createdDateTime_Input_1"]') || document.querySelector('input[aria-label*="To" i][aria-label*="date" i]');
+        waitForD365Idle();
+        const fromInput = await waitForElement(
+          'input[name$="_createdDateTime_Input_0"]'
+        );
+        const toInput = await waitForElement(
+          'input[name$="_createdDateTime_Input_1"]'
+        );
+        await sleep(d365Config.stepDelayMs);
         if (fromInput) await (await Promise.resolve().then(() => (init_core(), core_exports))).fill(fromInput, fmtD365(fromDt));
         if (toInput) await (await Promise.resolve().then(() => (init_core(), core_exports))).fill(toInput, fmtD365(toDt));
         const applyBtn = findButton("Apply");
@@ -909,12 +924,14 @@
           simulateClick(applyBtn);
           await waitReady('[role="grid"]');
         }
+        await sleep(d365Config.stepDelayMs);
         const checkbox = document.querySelector(
           'div[role="checkbox"][title="Select or unselect all rows"]'
         );
         const checked = checkbox.getAttribute("aria-checked");
         if (!checked) {
           simulateClick(checkbox);
+          await sleep(d365Config.stepDelayMs);
         }
         const officeBtn = findButton("Open in Microsoft Office");
         if (!officeBtn) throw new Error('"Open in Microsoft Office" button not found');
@@ -1572,6 +1589,7 @@
     parseXlsx,
     isProcessing,
     waitForD365Idle,
+    waitForElement,
     // ── workflows ─────────────────────────────────────────────────────────────
     workflows,
     BatchJobMonitor,

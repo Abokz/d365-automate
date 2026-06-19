@@ -19,8 +19,6 @@ const _log = {
   ok:    (...a) => console.log( '%c[D365]', 'color:#81c784;font-weight:bold', ...a),
 };
 
-console.log('TOOLKIT BUILD 2026-06-18-3');
-
 // ─────────────────────────────────────────────────────────────────────────────
 // sleep / waitFor
 // ─────────────────────────────────────────────────────────────────────────────
@@ -87,6 +85,19 @@ async function waitForD365Idle({
             label: 'D365 processing overlay to disappear'
         }
     );
+}
+
+async function waitForElement(selector, timeout = 10000) {
+  const start = Date.now();
+
+  while (Date.now() - start < timeout) {
+    const el = document.querySelector(selector);
+    if (el) return el;
+
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+
+  throw new Error(`Element not found: ${selector}`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -514,6 +525,7 @@ export {
   waitForGone,
   isProcessing,
   waitForD365Idle,
+  waitForElement,
   isVisible,
   query,
   findByText,

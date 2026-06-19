@@ -18,6 +18,7 @@ import {
   generateBatches, normalizeId,
   durationSeconds,
   waitForD365Idle,
+  waitForElement,
   findByText,
   simulateClick,
 } from './core.js';
@@ -429,13 +430,18 @@ const InvoiceCrossCheck = (() => {
         simulateClick(dateHeader);
         await sleep(400);
       }
+      waitForD365Idle();
 
       // Fill the from/to date inputs
       // D365 date range inputs typically have name patterns ending in _Input_0 / _Input_1
-      const fromInput = document.querySelector('input[name$="_createdDateTime_Input_0"]') ||
-        document.querySelector('input[aria-label*="From" i][aria-label*="date" i]');
-      const toInput   = document.querySelector('input[name$="_createdDateTime_Input_1"]') ||
-        document.querySelector('input[aria-label*="To" i][aria-label*="date" i]');
+      const fromInput = await waitForElement(
+        'input[name$="_createdDateTime_Input_0"]'
+      );
+
+      const toInput = await waitForElement(
+        'input[name$="_createdDateTime_Input_1"]'
+      );
+      await sleep(d365Config.stepDelayMs);
 
       if (fromInput) await (await import('./core.js')).fill(fromInput, fmtD365(fromDt));
       if (toInput)   await (await import('./core.js')).fill(toInput,   fmtD365(toDt));
@@ -446,6 +452,7 @@ const InvoiceCrossCheck = (() => {
         simulateClick(applyBtn);
         await waitReady('[role="grid"]');
       }
+      await sleep(d365Config.stepDelayMs);
 
       // ③ Select all rows
        const checkbox = document.querySelector(
@@ -455,6 +462,7 @@ const InvoiceCrossCheck = (() => {
 
       if (!checked) {
         simulateClick(checkbox);
+        await sleep(d365Config.stepDelayMs);
       }
 
       // ④ Open in Microsoft Office → Export to Excel

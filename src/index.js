@@ -15,6 +15,7 @@ import {
   parseDate, durationSeconds,
   fmtD365, fmtIxos,
   generateBatches, normalizeId,
+  waitForElement,
 } from './core.js';
 
 import {
@@ -84,6 +85,7 @@ const D365Toolkit = {
   parseXlsx,
   isProcessing,
   waitForD365Idle,
+  waitForElement,
 
   // ── workflows ─────────────────────────────────────────────────────────────
   workflows,

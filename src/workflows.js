@@ -21,6 +21,7 @@ import {
   waitForElement,
   findByText,
   simulateClick,
+  getByRole,
 } from './core.js';
 
 import {
@@ -457,9 +458,7 @@ const InvoiceCrossCheck = (() => {
       await sleep(d365Config.stepDelayMs);
 
       // ③ Select all rows
-       const checkbox = await waitForElement(
-        'div[role="checkbox"][title="Select or unselect all rows"]'
-      );
+      const checkbox = await getByRole("checkbox", "Select or unselect all rows");
       const checked = checkbox.getAttribute('aria-checked');     
 
       if (checked !== true) {

@@ -196,6 +196,38 @@ function findClickable(el) {
     return el;
 }
 
+/**
+ * Get element by role and filter with name
+ */
+async function getByRole(role, name, timeout = 60000) {
+  const regex = name instanceof RegExp
+    ? name
+    : new RegExp(
+        name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+        'i'
+      );
+
+  const start = Date.now();
+
+  while (Date.now() - start < timeout) {
+    const el = [...document.querySelectorAll(`[role="${role}"]`)]
+      .find(el =>
+        regex.test(el.textContent || '') ||
+        [...el.attributes].some(attr =>
+          regex.test(String(attr.value))
+        )
+      );
+
+    if (el) return el;
+
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+
+  throw new Error(
+    `Element not found: role=${role}, name=${name}`
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Click / fill — Playwright-style
 // ─────────────────────────────────────────────────────────────────────────────
@@ -534,6 +566,7 @@ export {
   findByText,
   findByLabel,
   findClickable,
+  getByRole,
   simulateClick,
   click,
   fill,

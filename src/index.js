@@ -16,6 +16,7 @@ import {
   fmtD365, fmtIxos,
   generateBatches, normalizeId,
   waitForElement,
+  getByRole,
 } from './core.js';
 
 import {
@@ -32,7 +33,7 @@ import {
 import { workflows, BatchJobMonitor, InvoiceCrossCheck } from './workflows.js';
 import { initUI, destroyUI, panelLog, setStatus, setProgress } from './ui.js';
 
-const version = "8";
+const version = "9";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Assemble the public API
@@ -86,6 +87,7 @@ const D365Toolkit = {
   isProcessing,
   waitForD365Idle,
   waitForElement,
+  getByRole,
 
   // ── workflows ─────────────────────────────────────────────────────────────
   workflows,

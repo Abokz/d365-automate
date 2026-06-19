@@ -28,6 +28,7 @@
     fmtD365: () => fmtD365,
     fmtIxos: () => fmtIxos,
     generateBatches: () => generateBatches,
+    getByRole: () => getByRole,
     gmFetch: () => gmFetch,
     isProcessing: () => isProcessing,
     isVisible: () => isVisible,
@@ -154,6 +155,25 @@
       }
     }
     return el;
+  }
+  async function getByRole(role, name, timeout = 6e4) {
+    const regex = name instanceof RegExp ? name : new RegExp(
+      name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+      "i"
+    );
+    const start = Date.now();
+    while (Date.now() - start < timeout) {
+      const el = [...document.querySelectorAll(`[role="${role}"]`)].find(
+        (el2) => regex.test(el2.textContent || "") || [...el2.attributes].some(
+          (attr) => regex.test(String(attr.value))
+        )
+      );
+      if (el) return el;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    throw new Error(
+      `Element not found: role=${role}, name=${name}`
+    );
   }
   function simulateClick(el) {
     if (!el) {
@@ -931,9 +951,7 @@
         }
         await waitForD365Idle();
         await sleep(d365Config.stepDelayMs);
-        const checkbox = await waitForElement(
-          'div[role="checkbox"][title="Select or unselect all rows"]'
-        );
+        const checkbox = await getByRole("checkbox", "Select or unselect all rows");
         const checked = checkbox.getAttribute("aria-checked");
         if (checked !== true) {
           simulateClick(checkbox);
@@ -1552,7 +1570,7 @@
   }
 
   // src/index.js
-  var version = "8";
+  var version = "9";
   var D365Toolkit = {
     // ── config (callers can mutate these) ────────────────────────────────────
     d365Config,
@@ -1598,6 +1616,7 @@
     isProcessing,
     waitForD365Idle,
     waitForElement,
+    getByRole,
     // ── workflows ─────────────────────────────────────────────────────────────
     workflows,
     BatchJobMonitor,

@@ -359,6 +359,7 @@ const InvoiceCrossCheck = (() => {
         }
       }
     }
+    _log.info(_legalEntityCount);
     return invoices;
   }
 

@@ -900,6 +900,7 @@
           }
         }
       }
+      _log.info(_legalEntityCount);
       return invoices;
     }
     function buildIxosUrl(desc, fromDt, toDt) {

@@ -531,6 +531,7 @@ const InvoiceCrossCheck = (() => {
       } catch (err) {
         _log.warn(`[${entity}] Batch ${label} failed: ${err.message}`);
       }
+      await waitForD365Idle();
     }
 
     _log.ok(`[${entity}] ${allIds.size} unique invoice IDs after all batches`);

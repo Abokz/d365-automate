@@ -979,6 +979,7 @@
         } catch (err) {
           _log.warn(`[${entity}] Batch ${label} failed: ${err.message}`);
         }
+        await waitForD365Idle();
       }
       _log.ok(`[${entity}] ${allIds.size} unique invoice IDs after all batches`);
       return allIds;
@@ -1547,7 +1548,7 @@
   }
 
   // src/index.js
-  var version = "5";
+  var version = "6";
   var D365Toolkit = {
     // ── config (callers can mutate these) ────────────────────────────────────
     d365Config,

@@ -457,7 +457,7 @@ const InvoiceCrossCheck = (() => {
       await sleep(d365Config.stepDelayMs);
 
       // ③ Select all rows
-       const checkbox = document.querySelector(
+       const checkbox = await waitForElement(
         'div[role="checkbox"][title="Select or unselect all rows"]'
       );
       const checked = checkbox.getAttribute('aria-checked');     

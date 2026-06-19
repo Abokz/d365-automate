@@ -65,9 +65,10 @@ function isProcessing() {
 }
 
 async function waitForD365Idle({
-    timeout = 30000,
+    timeout = 60000 * 5, // 5 minutes
     poll = 100
 } = {}) {
+    _log.info("Please wait. We're processing your request.");
     const start = Date.now();
 
     // Give the overlay a chance to appear.

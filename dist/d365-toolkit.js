@@ -64,9 +64,11 @@
     return el.offsetParent !== null && el.textContent?.includes("Please wait");
   }
   async function waitForD365Idle({
-    timeout = 3e4,
+    timeout = 6e4 * 5,
+    // 5 minutes
     poll = 100
   } = {}) {
+    _log.info("Please wait. We're processing your request.");
     const start = Date.now();
     while (Date.now() - start < 1e3) {
       if (isProcessing()) break;
@@ -927,7 +929,7 @@
         }
         await waitForD365Idle();
         await sleep(d365Config.stepDelayMs);
-        const checkbox = document.querySelector(
+        const checkbox = await waitForElement(
           'div[role="checkbox"][title="Select or unselect all rows"]'
         );
         const checked = checkbox.getAttribute("aria-checked");
@@ -1548,7 +1550,7 @@
   }
 
   // src/index.js
-  var version = "6";
+  var version = "7";
   var D365Toolkit = {
     // ── config (callers can mutate these) ────────────────────────────────────
     d365Config,

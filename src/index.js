@@ -32,7 +32,7 @@ import {
 import { workflows, BatchJobMonitor, InvoiceCrossCheck } from './workflows.js';
 import { initUI, destroyUI, panelLog, setStatus, setProgress } from './ui.js';
 
-const version = "6";
+const version = "7";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Assemble the public API

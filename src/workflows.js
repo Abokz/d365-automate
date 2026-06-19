@@ -457,21 +457,53 @@ const InvoiceCrossCheck = (() => {
       if (fromInput) await fill(fromInput, fmtD365(fromDt));
       if (toInput)   await fill(toInput,   fmtD365(toDt));
 
+
       // Apply
       const applyBtn = findButton('Apply');
       if (applyBtn) {
         simulateClick(applyBtn);
-        await waitReady('[role="grid"]');
+
+        // Wait for the grid to go stale (detach) then come back
+        // D365 replaces the grid DOM on filter apply — no "Please wait" overlay
+        const oldGrid = document.querySelector('[role="grid"]');
+        if (oldGrid) {
+          // Wait for old grid to detach
+          await waitFor(
+            () => !document.body.contains(oldGrid),
+            { timeout: 10_000, interval: 100, label: 'old grid to detach after Apply' }
+          ).catch(() => {
+            // Some D365 versions do an in-place refresh — don't hard fail
+            _log.warn('Old grid did not detach — D365 may have done an in-place refresh');
+          });
+        }
+
+        // Wait for a fresh grid to appear and be populated
+        await waitFor(
+          () => {
+            const g = document.querySelector('[role="grid"]');
+            // Make sure it's a new node (or at least has rows)
+            return g && g !== oldGrid && g.querySelector('[role="row"]') ? g : null;
+          },
+          { timeout: 15_000, interval: 150, label: 'fresh grid after Apply' }
+        );
+
+        await sleep(300); // let virtualised rows finish rendering
       }
+
       await waitForD365Idle();
       await sleep(d365Config.stepDelayMs);
 
       // ③ Select all rows
-      const checkbox = await getByRole("checkbox", "Select or unselect all rows");
-      const checked = checkbox.getAttribute('aria-checked');     
+      const checkbox = await getByRole('checkbox', 'Select or unselect all rows');
+      const checked = checkbox.getAttribute('aria-checked'); // returns "true" | "false" | "mixed"
 
-      if (checked !== true) {
+      if (checked !== 'true') {  // ← string comparison, not boolean
         simulateClick(checkbox);
+        // Wait for aria-checked to flip to "true" — more reliable than a fixed sleep
+        await waitFor(
+          () => checkbox.getAttribute('aria-checked') === 'true',
+          { timeout: 5_000, interval: 100, label: 'select-all checkbox to become checked' }
+        );
         await waitForD365Idle();
         await sleep(d365Config.stepDelayMs);
       }

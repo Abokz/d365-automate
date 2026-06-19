@@ -1,4 +1,4 @@
-/* D365 Toolkit — built 2026-06-19T06:15:29.478Z */
+/* D365 Toolkit — built 2026-06-19T06:43:34.821Z */
 var D365ToolkitBundle = (() => {
   var __defProp = Object.defineProperty;
   var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
@@ -988,14 +988,34 @@ var D365ToolkitBundle = (() => {
         const applyBtn = findButton("Apply");
         if (applyBtn) {
           simulateClick(applyBtn);
-          await waitReady('[role="grid"]');
+          const oldGrid = document.querySelector('[role="grid"]');
+          if (oldGrid) {
+            await waitFor(
+              () => !document.body.contains(oldGrid),
+              { timeout: 1e4, interval: 100, label: "old grid to detach after Apply" }
+            ).catch(() => {
+              _log.warn("Old grid did not detach \u2014 D365 may have done an in-place refresh");
+            });
+          }
+          await waitFor(
+            () => {
+              const g = document.querySelector('[role="grid"]');
+              return g && g !== oldGrid && g.querySelector('[role="row"]') ? g : null;
+            },
+            { timeout: 15e3, interval: 150, label: "fresh grid after Apply" }
+          );
+          await sleep(300);
         }
         await waitForD365Idle();
         await sleep(d365Config.stepDelayMs);
         const checkbox = await getByRole("checkbox", "Select or unselect all rows");
         const checked = checkbox.getAttribute("aria-checked");
-        if (checked !== true) {
+        if (checked !== "true") {
           simulateClick(checkbox);
+          await waitFor(
+            () => checkbox.getAttribute("aria-checked") === "true",
+            { timeout: 5e3, interval: 100, label: "select-all checkbox to become checked" }
+          );
           await waitForD365Idle();
           await sleep(d365Config.stepDelayMs);
         }
@@ -1750,7 +1770,7 @@ var D365ToolkitBundle = (() => {
   })();
 
   // package.json
-  var version = "1.0.5";
+  var version = "1.0.6";
 
   // src/index.js
   var D365Toolkit = {

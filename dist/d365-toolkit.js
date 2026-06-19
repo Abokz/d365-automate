@@ -900,7 +900,10 @@
           }
         }
       }
-      _log.info("Legal Entities count per IXOS: ", _legalEntityCount);
+      _log.info(
+        "Legal Entities count per IXOS:",
+        JSON.stringify(_legalEntityCount, null, 2)
+      );
       return invoices;
     }
     function buildIxosUrl(desc, fromDt, toDt) {
@@ -1576,7 +1579,7 @@
   }
 
   // src/index.js
-  var version = "13";
+  var version = "14";
   var D365Toolkit = {
     // ── config (callers can mutate these) ────────────────────────────────────
     d365Config,

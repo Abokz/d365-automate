@@ -31,12 +31,13 @@ import {
 import { workflows, BatchJobMonitor, InvoiceCrossCheck } from './workflows.js';
 import { initUI, destroyUI, panelLog, setStatus, setProgress } from './ui.js';
 
+const version = "3";
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Assemble the public API
 // ─────────────────────────────────────────────────────────────────────────────
 
 const D365Toolkit = {
-
   // ── config (callers can mutate these) ────────────────────────────────────
   d365Config,
 
@@ -99,7 +100,7 @@ const D365Toolkit = {
    * Injects the floating panel into the page.
    */
   init() {
-    _log.ok('D365 Toolkit initialising…');
+    _log.ok(`Version: ${version}; D365 Toolkit initialising…`);
     initUI();
   },
 

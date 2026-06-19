@@ -18,6 +18,8 @@ import {
   generateBatches, normalizeId,
   durationSeconds,
   waitForD365Idle,
+  findByText,
+  simulateClick,
 } from './core.js';
 
 import {
@@ -422,9 +424,9 @@ const InvoiceCrossCheck = (() => {
       if (!grid) throw new Error('Invoice journal grid not found');
 
       // Click the "Created date and time" column filter header
-      const dateHeader = findButton('Created date and time');
+      const dateHeader = findByText('Created date and time');
       if (dateHeader) {
-        dateHeader.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        simulateClick(dateHeader);
         await sleep(400);
       }
 
@@ -439,39 +441,42 @@ const InvoiceCrossCheck = (() => {
       if (toInput)   await (await import('./core.js')).fill(toInput,   fmtD365(toDt));
 
       // Apply
-      const applyBtn = findButton('Apply') || findButton('OK');
+      const applyBtn = findButton('Apply');
       if (applyBtn) {
-        applyBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        simulateClick(applyBtn);
         await waitReady('[role="grid"]');
       }
 
       // ③ Select all rows
-      const selectAll = document.querySelector('[role="checkbox"][aria-label*="Select or unselect all" i]') ||
-        document.querySelector('[role="checkbox"][aria-label*="all rows" i]');
-      if (selectAll) {
-        selectAll.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-        await sleep(300);
+       const checkbox = document.querySelector(
+        'div[role="checkbox"][title="Select or unselect all rows"]'
+      );
+      const checked = checkbox.getAttribute('aria-checked');     
+
+      if (!checked) {
+        simulateClick(checkbox);
       }
 
       // ④ Open in Microsoft Office → Export to Excel
       const officeBtn = findButton('Open in Microsoft Office');
       if (!officeBtn) throw new Error('"Open in Microsoft Office" button not found');
-      officeBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-      await sleep(600);
+      simulateClick(officeBtn);
+      await waitForD365Idle();
 
       const exportItem = findButton('Export to Excel Customer') ||
         Array.from(document.querySelectorAll('[role="menuitem"]'))
           .find(el => el.textContent.includes('Export to Excel'));
+
       if (!exportItem) throw new Error('"Export to Excel" menu item not found');
-      exportItem.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-      await sleep(400);
+      simulateClick(exportItem);
+      await waitForD365Idle();
 
       const downloadBtn = findButton('Download') ||
         Array.from(document.querySelectorAll('button'))
           .find(b => b.textContent.trim() === 'Download');
-      if (downloadBtn) {
-        downloadBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-      }
+      if (!downloadBtn) throw new Error('"Download" button not found');
+      simulateClick(downloadBtn);
+      await waitForD365Idle();
 
       // ⑤ Wait for blob URL (up to 10 minutes)
       _log.info('  ⏳ Waiting for D365 to generate XLSX...');
@@ -480,7 +485,7 @@ const InvoiceCrossCheck = (() => {
 
       // ⑥ Download the XLSX via GM_xmlhttpRequest
       const buffer = await downloadBlob(blobUrl);
-      const rows   = await parseXlsx(buffer);
+      const rows   = parseXlsx(buffer);
 
       if (!rows.length || !('Invoice' in rows[0])) {
         _log.warn(`  "Invoice" column not found. Available: ${Object.keys(rows[0] || {}).join(', ')}`);

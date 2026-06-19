@@ -875,7 +875,7 @@
     };
     let _ixosIds = /* @__PURE__ */ new Set();
     let _results = [];
-    let legalEntityCount = {};
+    let _legalEntityCount = {};
     function parseIxosHtml(html) {
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, "text/html");
@@ -894,8 +894,8 @@
           const invId = cells[1]?.textContent.trim().replace(/^'/, "") || "";
           const legalEnt = cells[6]?.textContent.trim() || "";
           if (invId && legalEnt) {
-            legalEntityCount[legalEnt] ??= 0;
-            legalEntityCount[legalEnt]++;
+            _legalEntityCount[legalEnt] ??= 0;
+            _legalEntityCount[legalEnt]++;
             invoices.push({ invId, legalEnt });
           }
         }
@@ -1031,15 +1031,15 @@
         const d365Ids = await fetchD365Invoices(entity, fromDt, toDt);
         if (!d365Ids.size) {
           _log.warn(`[${entity}] No D365 invoices found \u2014 skipping.`);
-          _results.push({ entity, d365Count: 0, ixosCount: legalEntityCount[entity], missingCount: 0, missing: [] });
+          _results.push({ entity, d365Count: 0, ixosCount: _legalEntityCount[entity], missingCount: 0, missing: [] });
           continue;
         }
         const missing = [...d365Ids].filter((id) => !_ixosIds.has(id));
-        _log.info(`[${entity}] D365=${d365Ids.size} | IXOS=${_ixosIds.size} | Missing=${missing.length}`);
+        _log.info(`[${entity}] D365=${d365Ids.size} | IXOS=${_legalEntityCount[entity]} | Missing=${missing.length}`);
         _results.push({
           entity,
           d365Count: d365Ids.size,
-          ixosCount: _ixosIds.size,
+          ixosCount: _legalEntityCount[entity],
           missingCount: missing.length,
           missing
         });
@@ -1575,7 +1575,7 @@
   }
 
   // src/index.js
-  var version = "10";
+  var version = "11";
   var D365Toolkit = {
     // ── config (callers can mutate these) ────────────────────────────────────
     d365Config,

@@ -328,7 +328,7 @@ const InvoiceCrossCheck = (() => {
 
   let _ixosIds   = new Set();   // populated once, reused for all entities
   let _results   = [];          // { entity, d365Count, ixosCount, missingCount, missing[] }
-  let legalEntityCount = {};
+  let _legalEntityCount = {};
 
   // ── IXOS HTML parser ───────────────────────────────────────────────────────
   // Mirrors the Python IXOSTableParser — extracts (invoiceId, legalEntity)
@@ -353,8 +353,8 @@ const InvoiceCrossCheck = (() => {
         const invId    = cells[1]?.textContent.trim().replace(/^'/, '') || '';
         const legalEnt = cells[6]?.textContent.trim() || '';
         if (invId && legalEnt) {
-          legalEntityCount[legalEnt] ??= 0;
-          legalEntityCount[legalEnt]++;
+          _legalEntityCount[legalEnt] ??= 0;
+          _legalEntityCount[legalEnt]++;
           invoices.push({ invId, legalEnt });
         }
       }
@@ -579,17 +579,17 @@ const InvoiceCrossCheck = (() => {
 
       if (!d365Ids.size) {
         _log.warn(`[${entity}] No D365 invoices found — skipping.`);
-        _results.push({ entity, d365Count: 0, ixosCount: legalEntityCount[entity], missingCount: 0, missing: [] });
+        _results.push({ entity, d365Count: 0, ixosCount: _legalEntityCount[entity], missingCount: 0, missing: [] });
         continue;
       }
 
       const missing = [...d365Ids].filter(id => !_ixosIds.has(id));
-      _log.info(`[${entity}] D365=${d365Ids.size} | IXOS=${_ixosIds.size} | Missing=${missing.length}`);
+      _log.info(`[${entity}] D365=${d365Ids.size} | IXOS=${_legalEntityCount[entity]} | Missing=${missing.length}`);
 
       _results.push({
         entity,
         d365Count:    d365Ids.size,
-        ixosCount:    _ixosIds.size,
+        ixosCount:    _legalEntityCount[entity],
         missingCount: missing.length,
         missing,
       });

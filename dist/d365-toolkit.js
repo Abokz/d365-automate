@@ -68,10 +68,12 @@
     // 5 minutes
     poll = 100
   } = {}) {
-    _log.info("Please wait. We're processing your request.");
     const start = Date.now();
     while (Date.now() - start < 1e3) {
-      if (isProcessing()) break;
+      if (isProcessing()) {
+        _log.info("Please wait. We're processing your request.");
+        break;
+      }
       await sleep(poll);
     }
     await waitFor(
@@ -83,7 +85,7 @@
       }
     );
   }
-  async function waitForElement(selector, timeout = 1e4) {
+  async function waitForElement(selector, timeout = 6e4) {
     const start = Date.now();
     while (Date.now() - start < timeout) {
       const el = document.querySelector(selector);
@@ -1550,7 +1552,7 @@
   }
 
   // src/index.js
-  var version = "7";
+  var version = "8";
   var D365Toolkit = {
     // ── config (callers can mutate these) ────────────────────────────────────
     d365Config,

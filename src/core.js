@@ -68,12 +68,14 @@ async function waitForD365Idle({
     timeout = 60000 * 5, // 5 minutes
     poll = 100
 } = {}) {
-    _log.info("Please wait. We're processing your request.");
     const start = Date.now();
 
     // Give the overlay a chance to appear.
     while (Date.now() - start < 1000) {
-        if (isProcessing()) break;
+        if (isProcessing()) {
+          _log.info("Please wait. We're processing your request.");
+          break;
+        }
         await sleep(poll);
     }
 
@@ -88,7 +90,7 @@ async function waitForD365Idle({
     );
 }
 
-async function waitForElement(selector, timeout = 10000) {
+async function waitForElement(selector, timeout = 60000) {
   const start = Date.now();
 
   while (Date.now() - start < timeout) {

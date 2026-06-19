@@ -40,7 +40,7 @@
     simulateClick: () => simulateClick,
     sleep: () => sleep,
     waitFor: () => waitFor,
-    waitForD365Idle: () => waitForD365Idle2,
+    waitForD365Idle: () => waitForD365Idle,
     waitForElement: () => waitForElement,
     waitForGone: () => waitForGone
   });
@@ -64,7 +64,7 @@
     if (!el) return false;
     return el.offsetParent !== null && el.textContent?.includes("Please wait");
   }
-  async function waitForD365Idle2({
+  async function waitForD365Idle({
     timeout = 6e4 * 5,
     // 5 minutes
     poll = 100
@@ -716,7 +716,7 @@
         } else {
           history.back();
         }
-        await waitForD365Idle2();
+        await waitForD365Idle();
         try {
           await waitFor(
             () => getGrid("Batch job"),
@@ -958,7 +958,7 @@
           simulateClick(dateHeader);
           await sleep(400);
         }
-        await waitForD365Idle2();
+        await waitForD365Idle();
         const fromInput = await waitForElement(
           'input[name$="_createdDateTime_Input_0"]'
         );
@@ -974,27 +974,27 @@
           simulateClick(applyBtn);
           await waitReady('[role="grid"]');
         }
-        await waitForD365Idle2();
+        await waitForD365Idle();
         await sleep(d365Config.stepDelayMs);
         const checkbox = await getByRole("checkbox", "Select or unselect all rows");
         const checked = checkbox.getAttribute("aria-checked");
         if (checked !== true) {
           simulateClick(checkbox);
-          await waitForD365Idle2();
+          await waitForD365Idle();
           await sleep(d365Config.stepDelayMs);
         }
         const officeBtn = findButton("Open in Microsoft Office");
         if (!officeBtn) throw new Error('"Open in Microsoft Office" button not found');
         simulateClick(officeBtn);
-        await waitForD365Idle2();
+        await waitForD365Idle();
         const exportItem = findButton("Export to Excel Customer") || Array.from(document.querySelectorAll('[role="menuitem"]')).find((el) => el.textContent.includes("Export to Excel"));
         if (!exportItem) throw new Error('"Export to Excel" menu item not found');
         simulateClick(exportItem);
-        await waitForD365Idle2();
+        await waitForD365Idle();
         const downloadBtn = findButton("Download") || Array.from(document.querySelectorAll("button")).find((b) => b.textContent.trim() === "Download");
         if (!downloadBtn) throw new Error('"Download" button not found');
         simulateClick(downloadBtn);
-        await waitForD365Idle2();
+        await waitForD365Idle();
         _log.info("  \u23F3 Waiting for D365 to generate XLSX...");
         const blobUrl = await interceptor.promise;
         _log.ok(`  Blob URL captured`);
@@ -1026,7 +1026,7 @@
         } catch (err) {
           _log.warn(`[${entity}] Batch ${label} failed: ${err.message}`);
         }
-        await waitForD365Idle2();
+        await waitForD365Idle();
       }
       _log.ok(`[${entity}] ${allIds.size} unique invoice IDs after all batches`);
       return allIds;
@@ -1595,7 +1595,7 @@
   }
 
   // src/index.js
-  var version = "15";
+  var version = "16";
   var D365Toolkit = {
     // ── config (callers can mutate these) ────────────────────────────────────
     d365Config,
@@ -1639,7 +1639,7 @@
     loadSheetJS,
     parseXlsx,
     isProcessing,
-    waitForD365Idle: waitForD365Idle2,
+    waitForD365Idle,
     waitForElement,
     getByRole,
     // ── workflows ─────────────────────────────────────────────────────────────

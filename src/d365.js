@@ -13,7 +13,7 @@
  */
 
 import {
-  _log, sleep, waitFor, waitForGone,
+  _log, sleep, waitFor, waitForGone, waitForD365Idle,
   isVisible, query, findByText, findByLabel,
   simulateClick, click, fill, press, scrollGrid,
 } from './core.js';

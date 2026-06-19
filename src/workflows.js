@@ -351,7 +351,7 @@ const InvoiceCrossCheck = (() => {
 
       if (cells.length >= 7) {
         const invId    = cells[1]?.textContent.trim().replace(/^'/, '') || '';
-        const legalEnt = cells[6]?.textContent.trim() || '';
+        const legalEnt = cells[2]?.textContent.trim() || '';
         if (invId && legalEnt) {
           _legalEntityCount[legalEnt] ??= 0;
           _legalEntityCount[legalEnt]++;
@@ -359,7 +359,7 @@ const InvoiceCrossCheck = (() => {
         }
       }
     }
-    _log.info(_legalEntityCount);
+    _log.info("Legal Entities count per IXOS: ", _legalEntityCount);
     return invoices;
   }
 

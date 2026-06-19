@@ -892,7 +892,7 @@
         }
         if (cells.length >= 7) {
           const invId = cells[1]?.textContent.trim().replace(/^'/, "") || "";
-          const legalEnt = cells[6]?.textContent.trim() || "";
+          const legalEnt = cells[2]?.textContent.trim() || "";
           if (invId && legalEnt) {
             _legalEntityCount[legalEnt] ??= 0;
             _legalEntityCount[legalEnt]++;
@@ -900,7 +900,7 @@
           }
         }
       }
-      _log.info(_legalEntityCount);
+      _log.info("Legal Entities count per IXOS: ", _legalEntityCount);
       return invoices;
     }
     function buildIxosUrl(desc, fromDt, toDt) {
@@ -1576,7 +1576,7 @@
   }
 
   // src/index.js
-  var version = "12";
+  var version = "13";
   var D365Toolkit = {
     // ── config (callers can mutate these) ────────────────────────────────────
     d365Config,

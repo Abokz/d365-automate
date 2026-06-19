@@ -1576,7 +1576,7 @@
   }
 
   // src/index.js
-  var version = "11";
+  var version = "12";
   var D365Toolkit = {
     // ── config (callers can mutate these) ────────────────────────────────────
     d365Config,

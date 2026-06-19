@@ -32,8 +32,9 @@ import {
 
 import { workflows, BatchJobMonitor, InvoiceCrossCheck } from './workflows.js';
 import { initUI, destroyUI, panelLog, setStatus, setProgress } from './ui.js';
+import { EntitySwitchTest } from './test.js';
 
-const version = "16";
+const version = __BUILD_VERSION__;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Assemble the public API
@@ -96,6 +97,9 @@ const D365Toolkit = {
 
   // ── UI ────────────────────────────────────────────────────────────────────
   ui: { init: initUI, destroy: destroyUI, log: panelLog, setStatus, setProgress },
+
+  // ── Test ────────────────────────────────────────────────────────────────────
+  EntitySwitchTest,
 
   // ── lifecycle ─────────────────────────────────────────────────────────────
 

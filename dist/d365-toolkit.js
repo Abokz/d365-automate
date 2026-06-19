@@ -487,7 +487,7 @@
     }
     return findByLabel(label) || findByText(label);
   }
-  async function switchEntity(entityCode) {
+  async function switchEntity2(entityCode) {
     const currentBtn = document.querySelector("#CompanyButton_button");
     if (!currentBtn) throw new Error("switchEntity: company button not found");
     const currentCode = currentBtn.textContent.trim();
@@ -564,7 +564,7 @@
     }
   }
   async function navigate(module, entity = null) {
-    if (entity) await switchEntity(entity);
+    if (entity) await switchEntity2(entity);
     const base = `${location.origin}/`;
     const cmp = document.querySelector("#CompanyButton_button")?.textContent.trim() || "";
     location.href = `${base}?cmp=${cmp}&mi=${module}`;
@@ -1046,7 +1046,7 @@
       for (const entity of entities) {
         _log.info(`
 \u2500\u2500 Entity: ${entity} \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500`);
-        await switchEntity(entity);
+        await switchEntity2(entity);
         await waitReady();
         const d365Ids = await fetchD365Invoices(entity, fromDt, toDt);
         if (!d365Ids.size) {
@@ -1594,8 +1594,147 @@
     if (style) style.remove();
   }
 
+  // src/test.js
+  var EntitySwitchTest = /* @__PURE__ */ (() => {
+    let _verbose = false;
+    const log = {
+      info: (...a) => console.log("%c[TEST] \u2139", "color:#7eb8f7", ...a),
+      ok: (...a) => console.log("%c[TEST] \u2705", "color:#6fcf97", ...a),
+      warn: (...a) => console.warn("%c[TEST] \u26A0", "color:#f2c94c", ...a),
+      error: (...a) => console.error("%c[TEST] \u274C", "color:#eb5757", ...a),
+      dim: (...a) => {
+        if (_verbose) console.log("%c[TEST] \xB7", "color:#888", ...a);
+      }
+    };
+    function dumpVisibleInputs(label = "") {
+      const inputs = [...document.querySelectorAll("input")].filter((el) => {
+        const r = el.getBoundingClientRect();
+        return r.width > 0 && r.height > 0;
+      });
+      console.groupCollapsed(`[TEST] Visible inputs ${label} (${inputs.length})`);
+      inputs.forEach((el) => {
+        console.log({
+          id: el.id,
+          name: el.name,
+          ariaLabel: el.getAttribute("aria-label"),
+          type: el.type,
+          value: el.value,
+          placeholder: el.placeholder,
+          el
+        });
+      });
+      console.groupEnd();
+    }
+    function probeCompanyInput() {
+      const selectors = [
+        "#SysCompanyChooser_2_DataArea_id_input",
+        "#SysCompanyChooser_DataArea_id_input",
+        'input[id*="CompanyChooser"]',
+        'input[id*="DataArea"]',
+        'input[aria-label*="company" i]',
+        'input[aria-label*="legal entity" i]',
+        'input[name*="DataArea" i]',
+        ".lookupButton + input",
+        'input[id*="chooser" i]'
+      ];
+      log.info("Probing known company-input selectors...");
+      let found = false;
+      for (const sel of selectors) {
+        const els = document.querySelectorAll(sel);
+        if (els.length) {
+          log.ok(`  HIT  "${sel}" \u2192 ${els.length} element(s)`, [...els]);
+          found = true;
+        } else {
+          log.dim(`  miss "${sel}"`);
+        }
+      }
+      if (!found) {
+        log.warn("No known selector matched \u2014 dumping all visible inputs:");
+        dumpVisibleInputs("(company picker not found)");
+      }
+      return found;
+    }
+    async function openAndProbe() {
+      const btn = document.querySelector("#CompanyButton_button");
+      if (!btn) {
+        log.error("#CompanyButton_button not found");
+        return;
+      }
+      log.info(`Current entity: "${btn.textContent.trim()}" \u2014 clicking to open picker...`);
+      btn.click();
+      await sleep2(800);
+      probeCompanyInput();
+      dumpVisibleInputs("(after picker open)");
+    }
+    async function runSingle(entityCode) {
+      log.info(`\u2501\u2501\u2501 runSingle("${entityCode}") \u2501\u2501\u2501`);
+      const t0 = Date.now();
+      try {
+        await switchEntity(entityCode);
+        const elapsed = ((Date.now() - t0) / 1e3).toFixed(1);
+        log.ok(`runSingle done in ${elapsed}s`);
+        return { ok: true, entity: entityCode, elapsed };
+      } catch (err) {
+        const elapsed = ((Date.now() - t0) / 1e3).toFixed(1);
+        log.error(`runSingle failed after ${elapsed}s:`, err.message);
+        log.warn("Running DOM probe to help diagnose...");
+        await openAndProbe();
+        return { ok: false, entity: entityCode, elapsed, error: err.message };
+      }
+    }
+    async function runSequence(entities = [], { delayBetween = 2e3 } = {}) {
+      if (!entities.length) {
+        log.warn("No entities provided");
+        return [];
+      }
+      log.info(`\u2501\u2501\u2501 runSequence(${JSON.stringify(entities)}) \u2501\u2501\u2501`);
+      log.info(`Delay between switches: ${delayBetween}ms`);
+      const results = [];
+      for (let i = 0; i < entities.length; i++) {
+        const entity = entities[i];
+        log.info(`
+[${i + 1}/${entities.length}] Switching to "${entity}"...`);
+        const result = await runSingle(entity);
+        results.push(result);
+        const shown = document.querySelector("#CompanyButton_button")?.textContent.trim();
+        log.info(`  Button now shows: "${shown}"`);
+        if (!result.ok) {
+          log.error(`Sequence aborted at step ${i + 1} \u2014 fix the issue and retry`);
+          break;
+        }
+        if (i < entities.length - 1) {
+          log.info(`  Waiting ${delayBetween}ms before next switch...`);
+          await sleep2(delayBetween);
+        }
+      }
+      console.table(results.map((r) => ({
+        Entity: r.entity,
+        Result: r.ok ? "\u2705 OK" : "\u274C FAIL",
+        "Time(s)": r.elapsed,
+        Error: r.error ?? ""
+      })));
+      return results;
+    }
+    function sleep2(ms) {
+      return new Promise((r) => setTimeout(r, ms));
+    }
+    return {
+      runSingle,
+      runSequence,
+      openAndProbe,
+      // open picker + dump DOM — call this if input not found
+      probeCompanyInput,
+      // probe selectors without opening picker
+      dumpVisibleInputs,
+      // dump all visible inputs at any time
+      setVerbose: (v) => {
+        _verbose = !!v;
+      }
+    };
+  })();
+
   // src/index.js
-  var version = "16";
+  var version = __BUILD_VERSION__;
   var D365Toolkit = {
     // ── config (callers can mutate these) ────────────────────────────────────
     d365Config,
@@ -1632,7 +1771,7 @@
     selectRow,
     goToRow,
     findButton,
-    switchEntity,
+    switchEntity: switchEntity2,
     navigate,
     createBlobInterceptor,
     downloadBlob,
@@ -1648,6 +1787,8 @@
     InvoiceCrossCheck,
     // ── UI ────────────────────────────────────────────────────────────────────
     ui: { init: initUI, destroy: destroyUI, log: panelLog, setStatus, setProgress },
+    // ── Test ────────────────────────────────────────────────────────────────────
+    EntitySwitchTest,
     // ── lifecycle ─────────────────────────────────────────────────────────────
     /**
      * Called automatically by TamperMonkey after the script loads.

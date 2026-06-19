@@ -6,6 +6,7 @@
 const esbuild = require('esbuild');
 const watch  = process.argv.includes('--watch');
 const minify = process.argv.includes('--minify');
+const buildTime = new Date().toISOString();
 
 const sharedOptions = {
   entryPoints: ['src/index.js'],
@@ -16,8 +17,11 @@ const sharedOptions = {
   target:      ['chrome110', 'firefox115', 'edge110'],
   outfile:     minify ? 'dist/d365-toolkit.min.js' : 'dist/d365-toolkit.js',
   minify,
+  define: {
+      __BUILD_VERSION__: JSON.stringify(buildTime),
+  },
   banner: {
-    js: `/* D365 Toolkit — built ${new Date().toISOString()} */`,
+    js: `/* D365 Toolkit — built ${buildTime} */`,
   },
 };
 

@@ -248,15 +248,19 @@ function pressTab(el) {
 async function switchEntity(entityCode) {
   const currentBtn = document.querySelector('#CompanyButton_button');
   if (!currentBtn) throw new Error('switchEntity: company button not found');
+
   const currentCode = currentBtn.textContent.trim();
   if (currentCode === entityCode) {
     _log.info(`Already on entity ${entityCode} — skipping switch`);
     return;
   }
+
   _log.info(`Switching entity: ${currentCode} → ${entityCode}`);
 
-  // 1. Open the picker
+  // 1. Open the picker and wait for the animation/overlay to settle
   simulateClick(currentBtn);
+  await sleep(600);                    // ← give the modal time to start opening
+  await waitForD365Idle();             // ← wait for any processing overlay
 
   // 2. Wait for the combobox input to become visible
   const searchInput = await waitFor(
@@ -268,19 +272,19 @@ async function switchEntity(entityCode) {
   );
   _log.ok(`Found input: id=${searchInput.id}`);
 
-  // 3. Fill the entity code
+  // 3. Fill the entity code and wait for D365 to react to the input
   await fill(searchInput, entityCode);
-  await sleep(300);
+  await sleep(500);                    // ← was 300ms — give D365 time to process keystroke
+  await waitForD365Idle();             // ← wait for any typeahead/filter processing
 
   // 4. Click the lookup button to open the dropdown grid
   const lookupBtn = document.querySelector('.lookupButton');
   if (!lookupBtn) throw new Error('switchEntity: lookup button not found');
   simulateClick(lookupBtn);
   _log.ok('Clicked lookup button — waiting for Company grid...');
+  await waitForD365Idle();             // ← wait for grid data to load
+  await sleep(400);                    // ← extra buffer for virtualized list to render
 
-  // The grid is a virtualized fixed-data-table list: DOM nodes get recycled
-  // as it loads/filters/scrolls, so an id captured once can be stale a
-  // moment later. Always re-query fresh right before clicking.
   const findMatchingCell = () => {
     const cells = document.querySelectorAll('input[role="textbox"][aria-label="Company"]');
     for (const cell of cells) {
@@ -291,35 +295,53 @@ async function switchEntity(entityCode) {
     return null;
   };
 
-  // Wait for a match to first appear at all
+  // Wait for a match to first appear
   await waitFor(findMatchingCell, { timeout: 8_000, label: `Company textbox for "${entityCode}"` });
 
-  // Let virtualization finish settling (auto-scroll-to-match, re-render
-  // after filter) before we start treating any node as stable.
-  await sleep(250);
+  // Let virtualization finish settling before treating any node as stable
+  await sleep(400);                    // ← was 250ms
 
-  const gridStillOpen = () => document.querySelector('input[role="textbox"][aria-label="Company"]') !== null;
+  const gridStillOpen = () =>
+    document.querySelector('input[role="textbox"][aria-label="Company"]') !== null;
 
   let attempt = 0;
-  const maxAttempts = 4;
+  const maxAttempts = 5;              // ← bumped from 4
+
   while (gridStillOpen() && attempt < maxAttempts) {
     attempt++;
-    const cell = findMatchingCell(); // fresh node every attempt, never reused
+    const cell = findMatchingCell();  // fresh node every attempt
     if (!cell) {
-      await sleep(150);
+      _log.warn(`Attempt ${attempt}: matching cell not found yet, retrying...`);
+      await sleep(300);               // ← was 150ms
       continue;
     }
+
     _log.ok(`Attempt ${attempt}: clicking id=${cell.id}, value=${cell.value}`);
     simulateClick(cell);
-    await sleep(250);
+
+    // Wait for the grid to actually close — don't just sleep and re-check
+    // immediately. Give D365 up to 3s to process the row click.
+    await waitFor(
+      () => !gridStillOpen(),
+      { timeout: 3_000, interval: 150, label: 'Company grid to close' }
+    ).catch(() => {
+      // Grid didn't close yet — loop will retry
+      _log.warn(`Attempt ${attempt}: grid still open after click, retrying...`);
+    });
+
+    await sleep(200);                 // small buffer between attempts
   }
 
   if (gridStillOpen()) {
-    throw new Error(`switchEntity: Company grid still open after ${maxAttempts} click attempts for "${entityCode}"`);
+    throw new Error(
+      `switchEntity: Company grid still open after ${maxAttempts} attempts for "${entityCode}"`
+    );
   }
 
-  // 6. Wait for D365 to finish refreshing
-  await waitReady();
+  // 6. Wait for D365 to finish the full page refresh after entity switch
+  await sleep(500);                   // ← give the navigation a moment to kick off
+  await waitForD365Idle();            // ← wait for the processing overlay
+  await waitReady();                  // ← wait for the grid/page to be interactive
 
   // 7. Confirm
   const newCode = document.querySelector('#CompanyButton_button')?.textContent.trim();

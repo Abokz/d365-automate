@@ -40,7 +40,7 @@
     simulateClick: () => simulateClick,
     sleep: () => sleep,
     waitFor: () => waitFor,
-    waitForD365Idle: () => waitForD365Idle,
+    waitForD365Idle: () => waitForD365Idle2,
     waitForElement: () => waitForElement,
     waitForGone: () => waitForGone
   });
@@ -64,7 +64,7 @@
     if (!el) return false;
     return el.offsetParent !== null && el.textContent?.includes("Please wait");
   }
-  async function waitForD365Idle({
+  async function waitForD365Idle2({
     timeout = 6e4 * 5,
     // 5 minutes
     poll = 100
@@ -497,6 +497,8 @@
     }
     _log.info(`Switching entity: ${currentCode} \u2192 ${entityCode}`);
     simulateClick(currentBtn);
+    await sleep(600);
+    await waitForD365Idle();
     const searchInput = await waitFor(
       () => {
         const el = document.querySelector("#SysCompanyChooser_2_DataArea_id_input");
@@ -506,11 +508,14 @@
     );
     _log.ok(`Found input: id=${searchInput.id}`);
     await fill(searchInput, entityCode);
-    await sleep(300);
+    await sleep(500);
+    await waitForD365Idle();
     const lookupBtn = document.querySelector(".lookupButton");
     if (!lookupBtn) throw new Error("switchEntity: lookup button not found");
     simulateClick(lookupBtn);
     _log.ok("Clicked lookup button \u2014 waiting for Company grid...");
+    await waitForD365Idle();
+    await sleep(400);
     const findMatchingCell = () => {
       const cells = document.querySelectorAll('input[role="textbox"][aria-label="Company"]');
       for (const cell of cells) {
@@ -521,24 +526,35 @@
       return null;
     };
     await waitFor(findMatchingCell, { timeout: 8e3, label: `Company textbox for "${entityCode}"` });
-    await sleep(250);
+    await sleep(400);
     const gridStillOpen = () => document.querySelector('input[role="textbox"][aria-label="Company"]') !== null;
     let attempt = 0;
-    const maxAttempts = 4;
+    const maxAttempts = 5;
     while (gridStillOpen() && attempt < maxAttempts) {
       attempt++;
       const cell = findMatchingCell();
       if (!cell) {
-        await sleep(150);
+        _log.warn(`Attempt ${attempt}: matching cell not found yet, retrying...`);
+        await sleep(300);
         continue;
       }
       _log.ok(`Attempt ${attempt}: clicking id=${cell.id}, value=${cell.value}`);
       simulateClick(cell);
-      await sleep(250);
+      await waitFor(
+        () => !gridStillOpen(),
+        { timeout: 3e3, interval: 150, label: "Company grid to close" }
+      ).catch(() => {
+        _log.warn(`Attempt ${attempt}: grid still open after click, retrying...`);
+      });
+      await sleep(200);
     }
     if (gridStillOpen()) {
-      throw new Error(`switchEntity: Company grid still open after ${maxAttempts} click attempts for "${entityCode}"`);
+      throw new Error(
+        `switchEntity: Company grid still open after ${maxAttempts} attempts for "${entityCode}"`
+      );
     }
+    await sleep(500);
+    await waitForD365Idle();
     await waitReady();
     const newCode = document.querySelector("#CompanyButton_button")?.textContent.trim();
     if (newCode !== entityCode) {
@@ -700,7 +716,7 @@
         } else {
           history.back();
         }
-        await waitForD365Idle();
+        await waitForD365Idle2();
         try {
           await waitFor(
             () => getGrid("Batch job"),
@@ -942,7 +958,7 @@
           simulateClick(dateHeader);
           await sleep(400);
         }
-        await waitForD365Idle();
+        await waitForD365Idle2();
         const fromInput = await waitForElement(
           'input[name$="_createdDateTime_Input_0"]'
         );
@@ -958,27 +974,27 @@
           simulateClick(applyBtn);
           await waitReady('[role="grid"]');
         }
-        await waitForD365Idle();
+        await waitForD365Idle2();
         await sleep(d365Config.stepDelayMs);
         const checkbox = await getByRole("checkbox", "Select or unselect all rows");
         const checked = checkbox.getAttribute("aria-checked");
         if (checked !== true) {
           simulateClick(checkbox);
-          await waitForD365Idle();
+          await waitForD365Idle2();
           await sleep(d365Config.stepDelayMs);
         }
         const officeBtn = findButton("Open in Microsoft Office");
         if (!officeBtn) throw new Error('"Open in Microsoft Office" button not found');
         simulateClick(officeBtn);
-        await waitForD365Idle();
+        await waitForD365Idle2();
         const exportItem = findButton("Export to Excel Customer") || Array.from(document.querySelectorAll('[role="menuitem"]')).find((el) => el.textContent.includes("Export to Excel"));
         if (!exportItem) throw new Error('"Export to Excel" menu item not found');
         simulateClick(exportItem);
-        await waitForD365Idle();
+        await waitForD365Idle2();
         const downloadBtn = findButton("Download") || Array.from(document.querySelectorAll("button")).find((b) => b.textContent.trim() === "Download");
         if (!downloadBtn) throw new Error('"Download" button not found');
         simulateClick(downloadBtn);
-        await waitForD365Idle();
+        await waitForD365Idle2();
         _log.info("  \u23F3 Waiting for D365 to generate XLSX...");
         const blobUrl = await interceptor.promise;
         _log.ok(`  Blob URL captured`);
@@ -1010,7 +1026,7 @@
         } catch (err) {
           _log.warn(`[${entity}] Batch ${label} failed: ${err.message}`);
         }
-        await waitForD365Idle();
+        await waitForD365Idle2();
       }
       _log.ok(`[${entity}] ${allIds.size} unique invoice IDs after all batches`);
       return allIds;
@@ -1579,7 +1595,7 @@
   }
 
   // src/index.js
-  var version = "14";
+  var version = "15";
   var D365Toolkit = {
     // ── config (callers can mutate these) ────────────────────────────────────
     d365Config,
@@ -1623,7 +1639,7 @@
     loadSheetJS,
     parseXlsx,
     isProcessing,
-    waitForD365Idle,
+    waitForD365Idle: waitForD365Idle2,
     waitForElement,
     getByRole,
     // ── workflows ─────────────────────────────────────────────────────────────

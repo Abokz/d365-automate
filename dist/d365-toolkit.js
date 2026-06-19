@@ -909,7 +909,7 @@
           simulateClick(dateHeader);
           await sleep(400);
         }
-        waitForD365Idle();
+        await waitForD365Idle();
         const fromInput = await waitForElement(
           'input[name$="_createdDateTime_Input_0"]'
         );
@@ -917,20 +917,23 @@
           'input[name$="_createdDateTime_Input_1"]'
         );
         await sleep(d365Config.stepDelayMs);
-        if (fromInput) await (await Promise.resolve().then(() => (init_core(), core_exports))).fill(fromInput, fmtD365(fromDt));
-        if (toInput) await (await Promise.resolve().then(() => (init_core(), core_exports))).fill(toInput, fmtD365(toDt));
+        const { fill: fill2 } = await Promise.resolve().then(() => (init_core(), core_exports));
+        if (fromInput) await fill2(fromInput, fmtD365(fromDt));
+        if (toInput) await fill2(toInput, fmtD365(toDt));
         const applyBtn = findButton("Apply");
         if (applyBtn) {
           simulateClick(applyBtn);
           await waitReady('[role="grid"]');
         }
+        await waitForD365Idle();
         await sleep(d365Config.stepDelayMs);
         const checkbox = document.querySelector(
           'div[role="checkbox"][title="Select or unselect all rows"]'
         );
         const checked = checkbox.getAttribute("aria-checked");
-        if (!checked) {
+        if (checked !== true) {
           simulateClick(checkbox);
+          await waitForD365Idle();
           await sleep(d365Config.stepDelayMs);
         }
         const officeBtn = findButton("Open in Microsoft Office");
@@ -949,7 +952,7 @@
         const blobUrl = await interceptor.promise;
         _log.ok(`  Blob URL captured`);
         const buffer = await downloadBlob(blobUrl);
-        const rows = parseXlsx(buffer);
+        const rows = await parseXlsx(buffer);
         if (!rows.length || !("Invoice" in rows[0])) {
           _log.warn(`  "Invoice" column not found. Available: ${Object.keys(rows[0] || {}).join(", ")}`);
           return /* @__PURE__ */ new Set();
@@ -1544,7 +1547,7 @@
   }
 
   // src/index.js
-  var version = "4";
+  var version = "5";
   var D365Toolkit = {
     // ── config (callers can mutate these) ────────────────────────────────────
     d365Config,

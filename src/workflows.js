@@ -430,7 +430,7 @@ const InvoiceCrossCheck = (() => {
         simulateClick(dateHeader);
         await sleep(400);
       }
-      waitForD365Idle();
+      await waitForD365Idle();
 
       // Fill the from/to date inputs
       // D365 date range inputs typically have name patterns ending in _Input_0 / _Input_1
@@ -443,8 +443,9 @@ const InvoiceCrossCheck = (() => {
       );
       await sleep(d365Config.stepDelayMs);
 
-      if (fromInput) await (await import('./core.js')).fill(fromInput, fmtD365(fromDt));
-      if (toInput)   await (await import('./core.js')).fill(toInput,   fmtD365(toDt));
+      const { fill } = await import('./core.js');
+      if (fromInput) await fill(fromInput, fmtD365(fromDt));
+      if (toInput)   await fill(toInput,   fmtD365(toDt));
 
       // Apply
       const applyBtn = findButton('Apply');
@@ -452,6 +453,7 @@ const InvoiceCrossCheck = (() => {
         simulateClick(applyBtn);
         await waitReady('[role="grid"]');
       }
+      await waitForD365Idle();
       await sleep(d365Config.stepDelayMs);
 
       // ③ Select all rows
@@ -460,8 +462,9 @@ const InvoiceCrossCheck = (() => {
       );
       const checked = checkbox.getAttribute('aria-checked');     
 
-      if (!checked) {
+      if (checked !== true) {
         simulateClick(checkbox);
+        await waitForD365Idle();
         await sleep(d365Config.stepDelayMs);
       }
 
@@ -493,7 +496,7 @@ const InvoiceCrossCheck = (() => {
 
       // ⑥ Download the XLSX via GM_xmlhttpRequest
       const buffer = await downloadBlob(blobUrl);
-      const rows   = parseXlsx(buffer);
+      const rows   = await parseXlsx(buffer);
 
       if (!rows.length || !('Invoice' in rows[0])) {
         _log.warn(`  "Invoice" column not found. Available: ${Object.keys(rows[0] || {}).join(', ')}`);
